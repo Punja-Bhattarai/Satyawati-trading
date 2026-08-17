@@ -42,14 +42,24 @@ document.addEventListener('DOMContentLoaded', () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ password: loginPassword.value }),
       });
-      if (res.ok) {
-        const data = await res.json();
+      const text = await res.text();
+      let data = {};
+      try {
+        data = JSON.parse(text);
+      } catch (err) {
+        /* non-JSON response → wrong server */
+      }
+      if (res.ok && data.token) {
         store(data.token);
         loginView.classList.add('hidden');
         dashboard.classList.remove('hidden');
         loginPassword.value = '';
         loadAll();
+      } else if (res.status === 401) {
+        loginError.textContent = 'Wrong password. Try again.';
+        loginError.classList.remove('hidden');
       } else {
+        loginError.textContent = 'Server not reachable — open the admin page at http://localhost:3000/admin.html';
         loginError.classList.remove('hidden');
       }
     } catch (err) {

@@ -210,7 +210,7 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ phone, password }),
       });
-      const data = await res.json();
+      const data = await parseJSON(res);
       if (!res.ok) throw new Error(data.error || 'Login failed');
       Auth.set(data);
       closeModal();
@@ -239,7 +239,7 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, phone, password }),
       });
-      const data = await res.json();
+      const data = await parseJSON(res);
       if (!res.ok) throw new Error(data.error || 'Registration failed');
       Auth.set(data);
       closeModal();
@@ -270,6 +270,18 @@
     toast.classList.add('show');
     clearTimeout(showToast._t);
     showToast._t = setTimeout(() => toast.classList.remove('show'), 2400);
+  }
+
+  /* safe JSON read — shows a friendly message if the server answers HTML */
+  async function parseJSON(res) {
+    const text = await res.text();
+    try {
+      return JSON.parse(text);
+    } catch (err) {
+      throw new Error(
+        'The server did not respond. Please open the website at http://localhost:3000 and try again.'
+      );
+    }
   }
 
   window.Auth = Auth;
