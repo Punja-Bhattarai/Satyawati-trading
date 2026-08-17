@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Buy Paints &amp; Tools | Satyawati Trading &amp; Paints Suppliers</title>
+  <meta name="description" content="Shop Asian Paints — interior & exterior paints, brushes, rollers and primers. Pick a category and order per litre or per piece." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+
+  <!-- ===== Header ===== -->
+  <header class="header" id="header">
+    <nav class="nav container">
+      <a href="index.html" class="logo">
+        <img class="logo-img" src="assets/asian-paints-logo.png" alt="Asian Paints" />
+        <span class="logo-text">
+          <strong class="brand">Satyawati Trading</strong>
+          <small>&amp; Paints Suppliers</small>
+        </span>
+      </a>
+      <ul class="nav-links" id="navLinks">
+        <li><a href="index.html" class="nav-link">Home</a></li>
+        <li><a href="index.html#about" class="nav-link">About</a></li>
+        <li><a href="index.html#products" class="nav-link">Products</a></li>
+        <li><a href="buy.html" class="nav-link active">Buy</a></li>
+        <li><a href="index.html#gallery" class="nav-link">Gallery</a></li>
+        <li><a href="index.html#contact" class="nav-link">Contact</a></li>
+        <li><a href="tel:9766798922" class="nav-cta">Call Now</a></li>
+      </ul>
+      <button class="cart-btn" id="cartBtn" aria-label="Open cart">
+        <span class="cart-icon">&#128722;</span>
+        <span class="cart-badge" id="cartCount">0</span>
+      </button>
+      <button class="nav-toggle" id="navToggle" aria-label="Toggle menu">
+        <span></span><span></span><span></span>
+      </button>
+    </nav>
+  </header>
+
+  <!-- ===== Buy Hero ===== -->
+  <section class="buy-hero">
+    <div class="container buy-hero-inner">
+      <span class="hero-tag">Online Ordering</span>
+      <h1>What Would You Like <span class="accent">To Buy?</span></h1>
+      <p>Choose a category, set your quantity, add to cart and place your order — we confirm on WhatsApp.</p>
+    </div>
+  </section>
+
+  <!-- ===== Category Hub ===== -->
+  <section class="section" id="buyPage">
+    <div class="container">
+      <div class="section-head">
+        <span class="section-label">Shop by Category</span>
+        <h2>Pick A <span class="accent">Category</span></h2>
+        <p>Paints are sold per litre. Brushes &amp; rollers are sold per piece.</p>
+      </div>
+      <div class="cat-grid">
+        <a class="cat-card" href="buy-interior.html">
+          <span class="cat-icon">&#127968;</span>
+          <h3>Interior Paints</h3>
+          <p>Royale, Apcolite &amp; Tractor emulsions — per litre.</p>
+          <span class="cat-link">Shop Interior &rarr;</span>
+        </a>
+        <a class="cat-card" href="buy-exterior.html">
+          <span class="cat-icon">&#127970;</span>
+          <h3>Exterior Paints</h3>
+          <p>Apex, Ultima Protek, Ace &amp; Weatherproof — per litre.</p>
+          <span class="cat-link">Shop Exterior &rarr;</span>
+        </a>
+        <a class="cat-card" href="buy-brush.html">
+          <span class="cat-icon">&#128396;</span>
+          <h3>Painting Brushes</h3>
+          <p>1&Prime;, 1.5&Prime;, 2&Prime;, 2.5&Prime; &amp; 3&Prime; — per piece.</p>
+          <span class="cat-link">Shop Brushes &rarr;</span>
+        </a>
+        <a class="cat-card" href="buy-roller.html">
+          <span class="cat-icon">&#128374;</span>
+          <h3>Paint Rollers</h3>
+          <p>Rollers &amp; tray sets for fast coverage — per piece.</p>
+          <span class="cat-link">Shop Rollers &rarr;</span>
+        </a>
+        <a class="cat-card" href="buy-primer.html">
+          <span class="cat-icon">&#128230;</span>
+          <h3>Wall Primers</h3>
+          <p>Interior &amp; exterior primers — per litre.</p>
+          <span class="cat-link">Shop Primers &rarr;</span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Footer ===== -->
+  <footer class="footer">
+    <div class="container footer-grid">
+      <div>
+        <h3>Satyawati Trading <span>&amp; Paints Suppliers</span></h3>
+        <p>Your trusted authorized Asian Paints dealer for genuine products, honest prices and expert colour advice.</p>
+      </div>
+      <div>
+        <h3>Quick Links</h3>
+        <ul>
+          <li><a href="index.html">Home</a></li>
+          <li><a href="index.html#about">About</a></li>
+          <li><a href="buy.html">Buy</a></li>
+          <li><a href="index.html#contact">Contact</a></li>
+        </ul>
+      </div>
+      <div>
+        <h3>Reach Us</h3>
+        <ul>
+          <li><a href="tel:9766798922">9766798922</a></li>
+          <li><a href="tel:071414043">0714 14043</a></li>
+          <li>Your Shop Address Here</li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom container">
+      <p>&copy; <span id="year"></span> Satyawati Trading &amp; Paints Suppliers. All rights reserved.</p>
+      <p>Proud authorized Asian Paints dealer.</p>
+    </div>
+  </footer>
+
+  <!-- ===== Cart Drawer ===== -->
+  <div class="cart-overlay" id="cartOverlay"></div>
+  <aside class="cart-drawer" id="cartDrawer">
+    <div class="cart-header">
+      <h3>Your Cart</h3>
+      <button class="cart-close" id="cartClose" aria-label="Close cart">&#10005;</button>
+    </div>
+    <div class="cart-items" id="cartItems"></div>
+    <div class="cart-footer">
+      <div class="cart-total">
+        <span>Total</span>
+        <strong id="cartTotal">&#8377;0</strong>
+      </div>
+      <button class="btn btn-primary" id="checkoutBtn" disabled>Checkout</button>
+    </div>
+  </aside>
+
+  <!-- ===== Checkout Modal ===== -->
+  <div class="modal-overlay" id="checkoutModalOverlay"></div>
+  <div class="checkout-modal" id="checkoutModal">
+    <div class="modal-header">
+      <h3>Place Your Order</h3>
+      <button class="cart-close" id="modalClose" aria-label="Close">&#10005;</button>
+    </div>
+    <div class="modal-summary">
+      <p class="modal-count"><span id="modalCount">0</span> items in your order</p>
+      <div class="modal-items" id="modalItems"></div>
+      <div class="modal-total">
+        <span>Grand Total</span>
+        <strong id="modalTotal">&#8377;0</strong>
+      </div>
+    </div>
+    <input type="text" id="customerName" placeholder="Your Name" />
+    <input type="tel" id="customerPhone" placeholder="Your Phone Number" />
+    <button class="btn btn-primary modal-order" id="orderBtn">Confirm Order on WhatsApp</button>
+    <p class="form-note">Your order details are sent to us on WhatsApp (9766798922) for confirmation.</p>
+  </div>
+
+  <script src="js/auth.js"></script>
+  <script src="js/cart.js"></script>
+</body>
+</html>

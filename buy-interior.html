@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Buy Interior Paints | Satyawati Trading &amp; Paints Suppliers</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body data-category="interior">
+
+  <header class="header" id="header">
+    <nav class="nav container">
+      <a href="index.html" class="logo">
+        <img class="logo-img" src="assets/asian-paints-logo.png" alt="Asian Paints" />
+        <span class="logo-text">
+          <strong class="brand">Satyawati Trading</strong>
+          <small>&amp; Paints Suppliers</small>
+        </span>
+      </a>
+      <ul class="nav-links" id="navLinks">
+        <li><a href="index.html" class="nav-link">Home</a></li>
+        <li><a href="index.html#about" class="nav-link">About</a></li>
+        <li><a href="buy.html" class="nav-link active">Buy</a></li>
+        <li><a href="index.html#gallery" class="nav-link">Gallery</a></li>
+        <li><a href="index.html#contact" class="nav-link">Contact</a></li>
+        <li><a href="tel:9766798922" class="nav-cta">Call Now</a></li>
+      </ul>
+      <button class="cart-btn" id="cartBtn" aria-label="Open cart">
+        <span class="cart-icon">&#128722;</span>
+        <span class="cart-badge" id="cartCount">0</span>
+      </button>
+      <button class="nav-toggle" id="navToggle" aria-label="Toggle menu">
+        <span></span><span></span><span></span>
+      </button>
+    </nav>
+  </header>
+
+  <section class="buy-hero">
+    <div class="container buy-hero-inner">
+      <a class="cat-back" href="buy.html">&larr; All Categories</a>
+      <span class="hero-tag">Interior Paints</span>
+      <h1>Interior <span class="accent">Paints</span></h1>
+      <p>Royale, Apcolite &amp; Tractor emulsions — sold per litre. Set your quantity and add to cart.</p>
+    </div>
+  </section>
+
+  <section class="section" id="buyPage">
+    <div class="container">
+      <div class="section-head">
+        <span class="section-label">Interior Range</span>
+        <h2>Choose Your <span class="accent">Quantity (Litres)</span></h2>
+        <p>All prices are per litre. Adjust the litres and press Add to Cart.</p>
+      </div>
+      <div class="products-grid buy-grid" id="buyGrid"></div>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="container footer-grid">
+      <div>
+        <h3>Satyawati Trading <span>&amp; Paints Suppliers</span></h3>
+        <p>Your trusted authorized Asian Paints dealer for genuine products, honest prices and expert colour advice.</p>
+      </div>
+      <div>
+        <h3>Quick Links</h3>
+        <ul>
+          <li><a href="index.html">Home</a></li>
+          <li><a href="buy.html">Shop</a></li>
+          <li><a href="buy-interior.html">Interior</a></li>
+          <li><a href="buy-exterior.html">Exterior</a></li>
+          <li><a href="buy-primer.html">Primers</a></li>
+        </ul>
+      </div>
+      <div>
+        <h3>Reach Us</h3>
+        <ul>
+          <li><a href="tel:9766798922">9766798922</a></li>
+          <li><a href="tel:071414043">0714 14043</a></li>
+          <li>Your Shop Address Here</li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom container">
+      <p>&copy; <span id="year"></span> Satyawati Trading &amp; Paints Suppliers. All rights reserved.</p>
+      <p>Proud authorized Asian Paints dealer.</p>
+    </div>
+  </footer>
+
+  <div class="cart-overlay" id="cartOverlay"></div>
+  <aside class="cart-drawer" id="cartDrawer">
+    <div class="cart-header">
+      <h3>Your Cart</h3>
+      <button class="cart-close" id="cartClose" aria-label="Close cart">&#10005;</button>
+    </div>
+    <div class="cart-items" id="cartItems"></div>
+    <div class="cart-footer">
+      <div class="cart-total">
+        <span>Total</span>
+        <strong id="cartTotal">&#8377;0</strong>
+      </div>
+      <button class="btn btn-primary" id="checkoutBtn" disabled>Checkout</button>
+    </div>
+  </aside>
+
+  <div class="modal-overlay" id="checkoutModalOverlay"></div>
+  <div class="checkout-modal" id="checkoutModal">
+    <div class="modal-header">
+      <h3>Place Your Order</h3>
+      <button class="cart-close" id="modalClose" aria-label="Close">&#10005;</button>
+    </div>
+    <div class="modal-summary">
+      <p class="modal-count"><span id="modalCount">0</span> items in your order</p>
+      <div class="modal-items" id="modalItems"></div>
+      <div class="modal-total">
+        <span>Grand Total</span>
+        <strong id="modalTotal">&#8377;0</strong>
+      </div>
+    </div>
+    <input type="text" id="customerName" placeholder="Your Name" />
+    <input type="tel" id="customerPhone" placeholder="Your Phone Number" />
+    <button class="btn btn-primary modal-order" id="orderBtn">Confirm Order on WhatsApp</button>
+    <p class="form-note">Your order details are sent to us on WhatsApp (9766798922) for confirmation.</p>
+  </div>
+
+  <script src="js/auth.js"></script>
+  <script src="js/cart.js"></script>
+</body>
+</html>

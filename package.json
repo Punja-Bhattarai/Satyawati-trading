@@ -1,0 +1,12 @@
+{
+  "name": "satyawati-paints-website",
+  "version": "1.0.0",
+  "description": "Satyawati Trading & Paints Suppliers — website with cart, orders and admin dashboard",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=22.5.0"
+  }
+}
