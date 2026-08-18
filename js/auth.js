@@ -71,7 +71,8 @@
       nav.insertBefore(btn, cartBtn || null);
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
-        toggleDropdown();
+        if (Auth.user()) toggleDropdown();
+        else Auth.requireLogin(() => {});
       });
     }
 

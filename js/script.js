@@ -26,24 +26,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
   /* ---- Product filtering ---- */
   const filterBar = document.getElementById('filterBar');
-  const productCards = document.querySelectorAll('.product-card');
+  if (filterBar) {
+    const productCards = document.querySelectorAll('.product-card');
 
-  filterBar.addEventListener('click', (e) => {
-    const btn = e.target.closest('.filter-btn');
-    if (!btn) return;
+    filterBar.addEventListener('click', (e) => {
+      const btn = e.target.closest('.filter-btn');
+      if (!btn) return;
 
-    filterBar.querySelectorAll('.filter-btn').forEach((b) => b.classList.remove('active'));
-    btn.classList.add('active');
+      filterBar.querySelectorAll('.filter-btn').forEach((b) => b.classList.remove('active'));
+      btn.classList.add('active');
 
-    const filter = btn.dataset.filter;
-    productCards.forEach((card) => {
-      const show = filter === 'all' || card.dataset.category === filter;
-      card.classList.toggle('hide', !show);
-      card.style.animation = 'none';
-      void card.offsetWidth;
-      card.style.animation = '';
+      const filter = btn.dataset.filter;
+      productCards.forEach((card) => {
+        const show = filter === 'all' || card.dataset.category === filter;
+        card.classList.toggle('hide', !show);
+        card.style.animation = 'none';
+        void card.offsetWidth;
+        card.style.animation = '';
+      });
     });
-  });
+  }
 
   /* ---- Scroll reveal ---- */
   const revealEls = document.querySelectorAll('.section-head, .about-card, .product-card, .service-card, .gallery-item, .contact-grid');
