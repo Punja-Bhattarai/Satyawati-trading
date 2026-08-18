@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Paint Visualizer | Satyawati Trading &amp; Paints Suppliers</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="stylesheet" href="css/visualizer.css" />
+</head>
+<body>
+
+  <header class="header" id="header">
+    <nav class="nav container">
+      <a href="index.html" class="logo">
+        <img class="logo-img" src="assets/asian-paints-logo.svg" alt="Asian Paints" />
+        <span class="logo-text">
+          <strong class="brand">Satyawati Trading</strong>
+          <small>&amp; Paints Suppliers</small>
+        </span>
+      </a>
+      <ul class="nav-links" id="navLinks">
+        <li><a href="index.html" class="nav-link">Home</a></li>
+        <li><a href="index.html#about" class="nav-link">About</a></li>
+        <li><a href="buy.html" class="nav-link">Buy</a></li>
+        <li><a href="paint-visualizer.html" class="nav-link active">Paint Visualizer</a></li>
+        <li><a href="index.html#contact" class="nav-link">Contact</a></li>
+        <li><a href="tel:9766798922" class="nav-cta">Call Now</a></li>
+      </ul>
+      <button class="cart-btn" id="cartBtn" aria-label="Open cart">
+        <span class="cart-icon">&#128722;</span>
+        <span class="cart-badge" id="cartCount">0</span>
+      </button>
+      <button class="nav-toggle" id="navToggle" aria-label="Toggle menu">
+        <span></span><span></span><span></span>
+      </button>
+    </nav>
+  </header>
+
+  <section class="vis-hero">
+    <div class="container vis-hero-inner">
+      <span class="hero-tag">Virtual Paint Studio</span>
+      <h1>Paint Your <span class="accent">House</span></h1>
+      <p>Upload a photo of your home, pick a shade, tap a wall — see it painted in real time.</p>
+    </div>
+  </section>
+
+  <section class="section" id="studio">
+    <div class="container">
+
+      <!-- ===== Step 1: Upload ===== -->
+      <div id="uploadStep">
+        <div class="upload-zone" id="uploadZone">
+          <div class="upload-icon">&#127963;</div>
+          <h3>Upload a photo of your house</h3>
+          <p>Drag &amp; drop your photo here, browse, or take a photo — JPG, PNG or WebP.</p>
+          <button class="btn btn-primary" id="pickBtn" type="button">Choose Photo</button>
+          <input type="file" id="fileInput" accept="image/jpeg,image/png,image/webp" hidden />
+        </div>
+      </div>
+
+      <!-- ===== Step 2: Editor ===== -->
+      <div id="editorStep" class="hidden">
+        <div class="editor-toolbar">
+          <div class="tool-group">
+            <span class="tool-label">Tool</span>
+            <button class="tool-btn active" data-tool="smart" type="button">&#129521; Smart Paint</button>
+            <button class="tool-btn" data-tool="select" type="button">&#9998; Select</button>
+            <button class="tool-btn" data-tool="brush" type="button">&#128396; Brush</button>
+            <button class="tool-btn" data-tool="eraser" type="button">&#129703; Eraser</button>
+          </div>
+          <div class="tool-group">
+            <button class="tool-btn" id="undoBtn" type="button" title="Undo">&#8630; Undo</button>
+            <button class="tool-btn" id="redoBtn" type="button" title="Redo">&#8631; Redo</button>
+            <button class="tool-btn" id="clearRegionBtn" type="button" title="Clear the selected region">Clear Region</button>
+            <button class="tool-btn" id="resetBtn" type="button" title="Reset all regions">Reset</button>
+          </div>
+          <div class="tool-group vis-range">
+            <label>Size <input type="range" id="brushSize" min="4" max="140" value="50" /></label>
+            <label>Softness <input type="range" id="brushSoft" min="0" max="100" value="60" /></label>
+          </div>
+          <div class="select-bar hidden" id="selectBar">
+            <button class="tool-btn" id="finishSelectBtn" type="button">&#9989; Finish</button>
+            <button class="tool-btn" id="undoPointBtn" type="button">Undo Point</button>
+            <button class="tool-btn" id="clearSelectBtn" type="button">Clear</button>
+          </div>
+        </div>
+
+        <div class="editor-stage">
+          <div class="canvas-wrap" id="canvasWrap">
+            <canvas id="paintCanvas" width="1100" height="700"></canvas>
+            <canvas id="lassoCanvas" width="1100" height="700"></canvas>
+            <div class="canvas-hint" id="canvasHint">Pick a shade, then tap a wall</div>
+          </div>
+          <aside class="shade-panel">
+            <div class="shade-head">
+              <h3>Paint Shades</h3>
+              <span class="shade-current" id="shadeCurrent">Pick a shade</span>
+            </div>
+            <input class="shade-search" id="shadeSearch" placeholder="Search shade or code..." />
+            <div class="shade-families" id="shadeFamilies"></div>
+            <div class="shade-grid" id="shadeGrid"></div>
+          </aside>
+        </div>
+
+        <div class="editor-footer">
+          <div class="region-list">
+            <h4>Painted Regions</h4>
+            <div id="regionsWrap"><p class="region-empty">No regions yet — pick a shade and tap a wall.</p></div>
+          </div>
+          <div class="editor-actions">
+            <button class="btn btn-outline" id="compareBtn" type="button">Before / After</button>
+            <button class="btn btn-outline" id="downloadBtn" type="button">&#11015; Download</button>
+            <button class="btn btn-primary" id="saveBtn" type="button">Save Design</button>
+            <a class="btn btn-outline" id="shopBtn" href="buy.html">View Selected Paint &rarr;</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== Before / After comparison ===== -->
+      <div id="compareOverlay" class="compare-overlay hidden">
+        <div class="compare-box">
+          <h3>Before / After</h3>
+          <div class="compare-imgs" id="compareImgs">
+            <canvas id="compareBefore" class="compare-img"></canvas>
+            <div class="compare-after" id="compareAfterWrap">
+              <canvas id="compareAfter" class="compare-img"></canvas>
+              <div class="compare-handle" id="compareHandle"><span>&#8596;</span></div>
+            </div>
+          </div>
+          <div class="compare-labels"><span>Original</span><span>Painted</span></div>
+          <button class="btn btn-outline" id="compareClose" type="button">Close</button>
+        </div>
+      </div>
+
+      <!-- ===== My Designs ===== -->
+      <div class="my-designs">
+        <div class="section-head">
+          <span class="section-label">Saved Work</span>
+          <h2>My <span class="accent">Designs</span></h2>
+        </div>
+        <div id="designsGrid" class="designs-grid">
+          <p class="region-empty">Sign in to save and manage your designs.</p>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="container footer-grid">
+      <div>
+        <h3>Satyawati Trading <span>&amp; Paints Suppliers</span></h3>
+        <p>Authorized Asian Paints dealer for genuine products &amp; honest prices.</p>
+      </div>
+      <div>
+        <h3>Quick Links</h3>
+        <ul>
+          <li><a href="index.html">Home</a></li>
+          <li><a href="buy.html">Buy</a></li>
+          <li><a href="paint-visualizer.html">Paint Visualizer</a></li>
+        </ul>
+      </div>
+      <div>
+        <h3>Reach Us</h3>
+        <ul>
+          <li><a href="tel:9766798922">9766798922</a></li>
+          <li><a href="tel:071414043">0714 14043</a></li>
+          <li>Your Shop Address Here</li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom container">
+      <p>&copy; <span id="year"></span> Satyawati Trading &amp; Paints Suppliers. All rights reserved.</p>
+      <p>Proud authorized Asian Paints dealer.</p>
+    </div>
+  </footer>
+
+  <div class="cart-overlay" id="cartOverlay"></div>
+  <aside class="cart-drawer" id="cartDrawer">
+    <div class="cart-header">
+      <h3>Your Cart</h3>
+      <button class="cart-close" id="cartClose" aria-label="Close cart">&#10005;</button>
+    </div>
+    <div class="cart-items" id="cartItems"></div>
+    <div class="cart-footer">
+      <a class="cart-back-link" href="index.html">&#8592; Back to Home</a>
+      <div class="cart-total">
+        <span>Total</span>
+        <strong id="cartTotal">&#8377;0</strong>
+      </div>
+      <button class="btn btn-primary" id="checkoutBtn" disabled>Checkout</button>
+    </div>
+  </aside>
+
+  <div class="modal-overlay" id="checkoutModalOverlay"></div>
+  <div class="checkout-modal" id="checkoutModal">
+    <div class="modal-header">
+      <h3>Place Your Order</h3>
+      <button class="cart-close" id="modalClose" aria-label="Close">&#10005;</button>
+    </div>
+    <div class="modal-summary">
+      <p class="modal-count"><span id="modalCount">0</span> items in your order</p>
+      <div class="modal-items" id="modalItems"></div>
+      <div class="modal-total">
+        <span>Grand Total</span>
+        <strong id="modalTotal">&#8377;0</strong>
+      </div>
+    </div>
+    <input type="text" id="customerName" placeholder="Your Name" />
+    <input type="tel" id="customerPhone" placeholder="Your Phone Number" />
+    <button class="btn btn-primary modal-order" id="orderBtn">Confirm Order on WhatsApp</button>
+    <p class="form-note">Your order details are sent to us on WhatsApp (9766798922) for confirmation.</p>
+  </div>
+
+  <div id="viewModal" class="lightbox" aria-hidden="true">
+    <button class="lightbox-close" id="viewModalClose" aria-label="Close">&#10005;</button>
+    <figure class="lightbox-figure">
+      <img id="viewModalImg" src="" alt="Design preview" />
+      <figcaption id="viewModalCaption"></figcaption>
+    </figure>
+  </div>
+
+  <script src="js/auth.js"></script>
+  <script src="js/cart.js"></script>
+  <script src="js/visualizer.js"></script>
+</body>
+</html>

@@ -1,6 +1,7 @@
 {
   "version": 2,
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "/api/index?path=$1" }
+    { "source": "/api/(.*)", "destination": "/api/index?path=$1" },
+    { "source": "/paint-visualizer", "destination": "/paint-visualizer.html" }
   ]
 }

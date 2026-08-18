@@ -319,10 +319,28 @@ document.addEventListener('DOMContentLoaded', () => {
   /* ---- delegated events for drawer + checkout summary ---- */
   document.addEventListener('click', (e) => {
     const minus = e.target.closest('.qty-btn.minus');
-    if (minus) return changeQty(Number(minus.dataset.id), -1);
+    if (minus) {
+      const buyCard = minus.closest('.buy-card');
+      if (buyCard) {
+        const input = buyCard.querySelector('.qty-input');
+        const val = (Number(input.value) || 1) - 1;
+        input.value = Math.max(Number(input.min) || 1, val);
+        return;
+      }
+      return changeQty(Number(minus.dataset.id), -1);
+    }
 
     const plus = e.target.closest('.qty-btn.plus');
-    if (plus) return changeQty(Number(plus.dataset.id), 1);
+    if (plus) {
+      const buyCard = plus.closest('.buy-card');
+      if (buyCard) {
+        const input = buyCard.querySelector('.qty-input');
+        const val = (Number(input.value) || 1) + 1;
+        input.value = Math.min(Number(input.max) || 100, val);
+        return;
+      }
+      return changeQty(Number(plus.dataset.id), 1);
+    }
 
     const remove = e.target.closest('.cart-remove');
     if (remove) return removeItem(Number(remove.dataset.id));
@@ -331,6 +349,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.addEventListener('input', (e) => {
     const input = e.target.closest('.qty-input');
     if (!input) return;
+    if (input.closest('.buy-card')) return;
     setQty(Number(input.dataset.id), Number(input.value) || 1);
   });
 

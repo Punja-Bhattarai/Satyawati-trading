@@ -62,6 +62,17 @@ db.exec(`
     password_hash TEXT NOT NULL,
     created_at    TEXT NOT NULL DEFAULT (datetime('now','localtime'))
   );
+
+  CREATE TABLE IF NOT EXISTS designs (
+    id             INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id        INTEGER NOT NULL,
+    name           TEXT NOT NULL DEFAULT 'My Design',
+    original_image TEXT,
+    final_image    TEXT,
+    shades         TEXT NOT NULL DEFAULT '[]',
+    regions        TEXT NOT NULL DEFAULT '[]',
+    created_at     TEXT NOT NULL DEFAULT (datetime('now','localtime'))
+  );
 `);
 
 /* migrate existing orders table to track the customer user */
@@ -328,6 +339,55 @@ const server = http.createServer(async (req, res) => {
         .run(name, phone, total, JSON.stringify(items), userId);
 
       return sendJSON(res, 201, { id: Number(result.lastInsertRowid), status: 'new' });
+    }
+
+    /* ---------- API: designs (login required) ---------- */
+    if (pathname === '/api/designs' && method === 'POST') {
+      const uid = requireUser(req, res);
+      if (!uid) return;
+      const body = await readBody(req);
+      const name = String(body.name || '').trim() || 'My Design';
+      const original = String(body.original_image || '');
+      const final = String(body.final_image || '');
+      const shades = JSON.stringify(Array.isArray(body.shades) ? body.shades : []);
+      const regions = JSON.stringify(Array.isArray(body.regions) ? body.regions : []);
+      if (!final) return sendJSON(res, 400, { error: 'Final image is required' });
+      const r = db
+        .prepare('INSERT INTO designs (user_id, name, original_image, final_image, shades, regions) VALUES (?,?,?,?,?,?)')
+        .run(uid, name, original, final, shades, regions);
+      return sendJSON(res, 201, { id: Number(r.lastInsertRowid), name, created_at: new Date().toISOString() });
+    }
+
+    if (pathname === '/api/designs' && method === 'GET') {
+      const uid = requireUser(req, res);
+      if (!uid) return;
+      const rows = db
+        .prepare('SELECT id, name, original_image, final_image, shades, created_at FROM designs WHERE user_id = ? ORDER BY id DESC')
+        .all(uid);
+      rows.forEach((r) => {
+        r.shades = JSON.parse(r.shades || '[]');
+      });
+      return sendJSON(res, 200, { designs: rows });
+    }
+
+    const designMatch = pathname.match(/^\/api\/designs\/(\d+)$/);
+    if (designMatch && method === 'PATCH') {
+      const uid = requireUser(req, res);
+      if (!uid) return;
+      const body = await readBody(req);
+      const name = String(body.name || '').trim();
+      if (!name) return sendJSON(res, 400, { error: 'Name is required' });
+      const r = db.prepare('UPDATE designs SET name = ? WHERE id = ? AND user_id = ?').run(name, Number(designMatch[1]), uid);
+      if (!r.changes) return sendJSON(res, 404, { error: 'Design not found' });
+      return sendJSON(res, 200, { id: Number(designMatch[1]), name });
+    }
+
+    if (designMatch && method === 'DELETE') {
+      const uid = requireUser(req, res);
+      if (!uid) return;
+      const r = db.prepare('DELETE FROM designs WHERE id = ? AND user_id = ?').run(Number(designMatch[1]), uid);
+      if (!r.changes) return sendJSON(res, 404, { error: 'Design not found' });
+      return sendJSON(res, 200, { ok: true });
     }
 
     /* ---------- API: admin login ---------- */

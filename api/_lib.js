@@ -34,7 +34,7 @@ function readBody(req) {
     let data = '';
     req.on('data', (c) => {
       data += c;
-      if (data.length > 1e6) reject(new Error('Body too large'));
+      if (data.length > 15e6) reject(new Error('Body too large'));
     });
     req.on('end', () => resolve(parseBody(data)));
     req.on('error', reject);

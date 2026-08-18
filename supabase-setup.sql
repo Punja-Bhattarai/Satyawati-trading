@@ -48,6 +48,17 @@ CREATE TABLE IF NOT EXISTS messages (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+CREATE TABLE IF NOT EXISTS designs (
+  id             BIGSERIAL PRIMARY KEY,
+  user_id        BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  name           TEXT NOT NULL DEFAULT 'My Design',
+  original_image TEXT,
+  final_image    TEXT,
+  shades         JSONB NOT NULL DEFAULT '[]',
+  regions        JSONB NOT NULL DEFAULT '[]',
+  created_at     TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
 -- Seed products (only when the table is empty)
 INSERT INTO products (id, name, category, price, unit, kind, color, tag, img)
 SELECT * FROM (VALUES

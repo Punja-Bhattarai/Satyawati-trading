@@ -15,6 +15,8 @@ const EXACT = {
   'POST /api/orders': require('../handlers/orders.js'),
   'POST /api/messages': require('../handlers/messages.js'),
   'GET /api/products': require('../handlers/products.js'),
+  'GET /api/designs': require('../handlers/designs.js'),
+  'POST /api/designs': require('../handlers/designs.js'),
   'POST /api/admin/login': require('../handlers/admin/login.js'),
   'GET /api/admin/orders': require('../handlers/admin/orders.js'),
   'GET /api/admin/messages': require('../handlers/admin/messages.js'),
@@ -42,6 +44,14 @@ module.exports = async (req, res) => {
   if (req.method === 'DELETE' && (m = pathname.match(/^\/api\/admin\/messages\/(\d+)$/))) {
     req.query.id = m[1];
     return require('../handlers/admin/messages/[id].js')(req, res);
+  }
+  if (req.method === 'PATCH' && (m = pathname.match(/^\/api\/designs\/(\d+)$/))) {
+    req.query.id = m[1];
+    return require('../handlers/designs/[id].js')(req, res);
+  }
+  if (req.method === 'DELETE' && (m = pathname.match(/^\/api\/designs\/(\d+)$/))) {
+    req.query.id = m[1];
+    return require('../handlers/designs/[id].js')(req, res);
   }
 
   send(res, 404, { error: 'Not Found' });
