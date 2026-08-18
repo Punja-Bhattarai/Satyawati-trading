@@ -26,6 +26,7 @@
         <li><a href="#home" class="nav-link active">Home</a></li>
         <li><a href="#about" class="nav-link">About</a></li>
         <li><a href="#dealer" class="nav-link">Dealer</a></li>
+        <li><a href="#achievements" class="nav-link">Awards</a></li>
         <li><a href="#products" class="nav-link">Products</a></li>
         <li><a href="#services" class="nav-link">Services</a></li>
         <li><a href="#gallery" class="nav-link">Gallery</a></li>
@@ -142,6 +143,18 @@
           </div>
         </div>
       </div>
+    </div>
+  </section>
+
+  <!-- ===== Achievements & Certificates ===== -->
+  <section class="section section-alt" id="achievements">
+    <div class="container">
+      <div class="section-head">
+        <span class="section-label">Awards &amp; Certificates</span>
+        <h2>Recognition That <span class="accent">Makes Us Proud</span></h2>
+        <p>Tap any certificate to view it in full.</p>
+      </div>
+      <div class="cert-grid" id="certGrid"></div>
     </div>
   </section>
 
@@ -448,6 +461,17 @@
     <p class="form-note">Your order details are sent to us on WhatsApp (9766798922) for confirmation.</p>
   </div>
 
+  <!-- ===== Certificate Lightbox ===== -->
+  <div class="lightbox" id="certLightbox" aria-hidden="true">
+    <button class="lightbox-close" id="certLightboxClose" aria-label="Close">&#10005;</button>
+    <button class="lightbox-nav lightbox-prev" id="certPrev" aria-label="Previous">&#8249;</button>
+    <figure class="lightbox-figure">
+      <img id="certLightboxImg" src="" alt="Certificate" />
+      <figcaption id="certLightboxCaption"></figcaption>
+    </figure>
+    <button class="lightbox-nav lightbox-next" id="certNext" aria-label="Next">&#8250;</button>
+  </div>
+
   <!-- ===== Footer ===== -->
   <footer class="footer">
     <div class="container footer-grid">
@@ -482,5 +506,67 @@
   <script src="js/script.js"></script>
   <script src="js/auth.js"></script>
   <script src="js/cart.js"></script>
+  <script>
+    /* Certificate titles — fill these in and they appear below each card.
+       Order matches cert-1.jpg ... cert-7.jpg. Leave empty for just numbers. */
+    var CERT_TITLES = ['', '', '', '', '', '', ''];
+    var CERT_FILES = Array.from({ length: 7 }, function (_, i) { return 'assets/achievements/cert-' + (i + 1) + '.jpg'; });
+
+    (function () {
+      var grid = document.getElementById('certGrid');
+      var lightbox = document.getElementById('certLightbox');
+      var img = document.getElementById('certLightboxImg');
+      var caption = document.getElementById('certLightboxCaption');
+      var current = 0;
+      if (!grid) return;
+
+      CERT_FILES.forEach(function (src, i) {
+        var btn = document.createElement('button');
+        btn.className = 'cert-card';
+        btn.type = 'button';
+        btn.setAttribute('aria-label', 'View certificate');
+        btn.innerHTML =
+          '<span class="cert-frame"><img src="' + src + '" alt="Certificate ' + (i + 1) + '" loading="lazy"></span>' +
+          '<span class="cert-caption">' + (CERT_TITLES[i] || ('Certificate ' + (i + 1))) + '</span>';
+        btn.addEventListener('click', function () { openLightbox(i); });
+        grid.appendChild(btn);
+      });
+
+      function show() {
+        img.src = CERT_FILES[current];
+        caption.textContent = CERT_TITLES[current] || ('Certificate ' + (current + 1) + ' of ' + CERT_FILES.length);
+      }
+
+      function openLightbox(i) {
+        current = i;
+        show();
+        lightbox.classList.add('open');
+        lightbox.setAttribute('aria-hidden', 'false');
+        document.body.style.overflow = 'hidden';
+      }
+
+      function closeLightbox() {
+        lightbox.classList.remove('open');
+        lightbox.setAttribute('aria-hidden', 'true');
+        document.body.style.overflow = '';
+      }
+
+      function nav(delta) {
+        current = (current + delta + CERT_FILES.length) % CERT_FILES.length;
+        show();
+      }
+
+      document.getElementById('certLightboxClose').addEventListener('click', closeLightbox);
+      document.getElementById('certPrev').addEventListener('click', function () { nav(-1); });
+      document.getElementById('certNext').addEventListener('click', function () { nav(1); });
+      lightbox.addEventListener('click', function (e) { if (e.target === lightbox) closeLightbox(); });
+      document.addEventListener('keydown', function (e) {
+        if (!lightbox.classList.contains('open')) return;
+        if (e.key === 'Escape') closeLightbox();
+        if (e.key === 'ArrowLeft') nav(-1);
+        if (e.key === 'ArrowRight') nav(1);
+      });
+    })();
+  </script>
 </body>
 </html>
