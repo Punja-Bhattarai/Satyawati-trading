@@ -1,4 +1,4 @@
-const { pool, send, readBody, signJWT, hashPassword } = require('../_lib');
+const { pool, send, readBody, signJWT, hashPassword } = require('../../api/_lib');
 
 module.exports = async (req, res) => {
   if (req.method !== 'POST') return send(res, 405, { error: 'Method not allowed' });

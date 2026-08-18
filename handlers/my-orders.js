@@ -1,4 +1,4 @@
-const { pool, send, requireUser } = require('./_lib');
+const { pool, send, requireUser } = require('../api/_lib');
 
 module.exports = async (req, res) => {
   if (req.method !== 'GET') return send(res, 405, { error: 'Method not allowed' });

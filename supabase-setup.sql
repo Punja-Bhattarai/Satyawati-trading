@@ -74,7 +74,18 @@ SELECT * FROM (VALUES
   (21, 'Roller 4"',                  'roller',   90,  'pc', 'roller', NULL, '4 inch', NULL),
   (22, 'Roller 7"',                  'roller',   130, 'pc', 'roller', NULL, '7 inch', NULL),
   (23, 'Roller 9"',                  'roller',   160, 'pc', 'roller', NULL, '9 inch', NULL),
-  (24, 'Roller Tray & Set',          'roller',   250, 'pc', 'roller', NULL, 'complete set', NULL)
+  (24, 'Roller Tray & Set',          'roller',   250, 'pc', 'roller', NULL, 'complete set', NULL),
+  (25, 'SmartCare Damp Proof',       'waterproofing', 350, 'L', 'drum', '#cfe6f5', NULL, NULL),
+  (26, 'SmartCare Hydroloc Xtreme',  'waterproofing', 650, 'L', 'drum', '#dfeef7', NULL, NULL),
+  (27, 'Metal Primer',               'enamel',   220, 'L', 'drum', '#8f9296', NULL, NULL),
+  (28, 'Wood Primer (Pink)',         'enamel',   250, 'L', 'drum', '#f2b6c0', NULL, NULL),
+  (29, 'Wood Primer (White)',        'enamel',   250, 'L', 'drum', '#f4f2ed', NULL, NULL),
+  (30, 'Premium Gloss Enamel — Blaze White',    'enamel', 380, 'L', 'drum', '#ffffff', NULL, NULL),
+  (31, 'Premium Gloss Enamel — PGE Brown',      'enamel', 380, 'L', 'drum', '#6b4423', NULL, NULL),
+  (32, 'Premium Gloss Enamel — Golden Yellow',  'enamel', 380, 'L', 'drum', '#f5c518', NULL, NULL),
+  (33, 'Premium Gloss Enamel — Black',          'enamel', 380, 'L', 'drum', '#1a1a1a', NULL, NULL),
+  (34, 'Premium Gloss Enamel — Smokey Grey',    'enamel', 380, 'L', 'drum', '#6e7275', NULL, NULL),
+  (35, 'WoodTech GP Thinner (Turpentine)',      'enamel', 160, 'L', 'drum', '#f7f3e6', NULL, NULL)
 ) AS v(id, name, category, price, unit, kind, color, tag, img)
 WHERE NOT EXISTS (SELECT 1 FROM products);
 

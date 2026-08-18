@@ -1,4 +1,4 @@
-const { send, readBody, signJWT } = require('../_lib');
+const { send, readBody, signJWT } = require('../../api/_lib');
 
 module.exports = async (req, res) => {
   if (req.method !== 'POST') return send(res, 405, { error: 'Method not allowed' });

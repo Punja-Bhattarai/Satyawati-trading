@@ -36,6 +36,17 @@ document.addEventListener('DOMContentLoaded', () => {
     { id: 22, name: 'Roller 7"',                  category: 'roller',   price: 130, unit: 'pc',  kind: 'roller', tag: '7 inch' },
     { id: 23, name: 'Roller 9"',                  category: 'roller',   price: 160, unit: 'pc',  kind: 'roller', tag: '9 inch' },
     { id: 24, name: 'Roller Tray & Set',          category: 'roller',   price: 250, unit: 'pc',  kind: 'roller', tag: 'complete set' },
+    { id: 25, name: 'SmartCare Damp Proof',       category: 'waterproofing', price: 350, unit: 'L', kind: 'drum', color: '#cfe6f5' },
+    { id: 26, name: 'SmartCare Hydroloc Xtreme',  category: 'waterproofing', price: 650, unit: 'L', kind: 'drum', color: '#dfeef7' },
+    { id: 27, name: 'Metal Primer',               category: 'enamel',   price: 220, unit: 'L',  kind: 'drum', color: '#8f9296' },
+    { id: 28, name: 'Wood Primer (Pink)',         category: 'enamel',   price: 250, unit: 'L',  kind: 'drum', color: '#f2b6c0' },
+    { id: 29, name: 'Wood Primer (White)',        category: 'enamel',   price: 250, unit: 'L',  kind: 'drum', color: '#f4f2ed' },
+    { id: 30, name: 'Premium Gloss Enamel — Blaze White', category: 'enamel', price: 380, unit: 'L', kind: 'drum', color: '#ffffff' },
+    { id: 31, name: 'Premium Gloss Enamel — PGE Brown',   category: 'enamel', price: 380, unit: 'L', kind: 'drum', color: '#6b4423' },
+    { id: 32, name: 'Premium Gloss Enamel — Golden Yellow', category: 'enamel', price: 380, unit: 'L', kind: 'drum', color: '#f5c518' },
+    { id: 33, name: 'Premium Gloss Enamel — Black',        category: 'enamel', price: 380, unit: 'L', kind: 'drum', color: '#1a1a1a' },
+    { id: 34, name: 'Premium Gloss Enamel — Smokey Grey',  category: 'enamel', price: 380, unit: 'L', kind: 'drum', color: '#6e7275' },
+    { id: 35, name: 'WoodTech GP Thinner (Turpentine)',    category: 'enamel', price: 160, unit: 'L', kind: 'drum', color: '#f7f3e6' },
   ];
 
   const CATEGORY_INFO = {
@@ -44,6 +55,8 @@ document.addEventListener('DOMContentLoaded', () => {
     brush:    { title: 'Painting Brushes', blurb: 'Premium brushes in every size — sold per piece.' },
     roller:   { title: 'Paint Rollers', blurb: 'Rollers and tray sets for fast, even coverage — sold per piece.' },
     primer:   { title: 'Wall Primers', blurb: 'Interior & exterior primers to seal walls before painting — sold per litre.' },
+    waterproofing: { title: 'Waterproofing', blurb: 'SmartCare Damp Proof & Hydroloc for damp-free walls — sold per litre.' },
+    enamel:   { title: 'Enamels, Primers & Thinners', blurb: 'Enamel top coats, metal & wood primers, and thinners — sold per litre.' },
   };
 
   const productById = (id) => PRODUCTS.find((p) => p.id === Number(id));
@@ -104,6 +117,15 @@ document.addEventListener('DOMContentLoaded', () => {
     if (p.kind === 'drum') return `<div class="swatch" style="--c:${p.color}">${drumSVG(p.color)}</div>`;
     if (p.img) return `<div class="swatch product-swatch"><img class="product-img" src="assets/images/${p.img}" alt="${p.name}"></div>`;
     return `<div class="swatch" style="--c:${p.color || '#e4002b'}"></div>`;
+  };
+
+  /* compact product image for cart thumbnails */
+  const thumbArt = (p) => {
+    if (p.kind === 'brush') return brushSVG();
+    if (p.kind === 'roller') return rollerSVG(p.color || '#e4002b');
+    if (p.kind === 'drum') return drumSVG(p.color);
+    if (p.img) return `<img class="cart-thumb-img" src="assets/images/${p.img}" alt="${p.name}">`;
+    return `<div class="cart-thumb-color" style="background:${p.color || '#e4002b'}"></div>`;
   };
 
   const injectDrums = () => {
@@ -232,14 +254,16 @@ document.addEventListener('DOMContentLoaded', () => {
         const u = p.unit === 'pc' ? ' / piece' : ' / litre';
         return `
         <div class="cart-item">
-          <div class="cart-swatch" style="background:${p.color || '#e4002b'}"></div>
+          <div class="cart-thumb">${thumbArt(p)}</div>
           <div class="cart-info">
             <strong>${p.name}</strong>
             <span>${formatINR(p.price)}${u}</span>
           </div>
-          ${qtyStepperHTML(p.id, item.qty, true)}
-          <span class="cart-line">${formatINR(p.price * item.qty)}</span>
           <button class="cart-remove" data-id="${p.id}" aria-label="Remove">&#10005;</button>
+          <div class="cart-bottom">
+            ${qtyStepperHTML(p.id, item.qty, true)}
+            <span class="cart-line">${formatINR(p.price * item.qty)}</span>
+          </div>
         </div>`;
       })
       .join('');

@@ -3,16 +3,14 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Buy Paints &amp; Tools | Satyawati Trading &amp; Paints Suppliers</title>
-  <meta name="description" content="Shop Asian Paints — interior & exterior paints, brushes, rollers and primers. Pick a category and order per litre or per piece." />
+  <title>Buy Waterproofing | Satyawati Trading &amp; Paints Suppliers</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/styles.css" />
 </head>
-<body>
+<body data-category="waterproofing">
 
-  <!-- ===== Header ===== -->
   <header class="header" id="header">
     <nav class="nav container">
       <a href="index.html" class="logo">
@@ -25,7 +23,6 @@
       <ul class="nav-links" id="navLinks">
         <li><a href="index.html" class="nav-link">Home</a></li>
         <li><a href="index.html#about" class="nav-link">About</a></li>
-        <li><a href="index.html#products" class="nav-link">Products</a></li>
         <li><a href="buy.html" class="nav-link active">Buy</a></li>
         <li><a href="index.html#gallery" class="nav-link">Gallery</a></li>
         <li><a href="index.html#contact" class="nav-link">Contact</a></li>
@@ -41,71 +38,26 @@
     </nav>
   </header>
 
-  <!-- ===== Buy Hero ===== -->
   <section class="buy-hero">
     <div class="container buy-hero-inner">
-      <span class="hero-tag">Online Ordering</span>
-      <h1>What Would You Like <span class="accent">To Buy?</span></h1>
-      <p>Choose a category, set your quantity, add to cart and place your order — we confirm on WhatsApp.</p>
+      <a class="cat-back" href="buy.html">&larr; All Categories</a>
+      <span class="hero-tag">Waterproofing</span>
+      <h1>Water<span class="accent">proofing</span></h1>
+      <p>SmartCare Damp Proof &amp; Hydroloc Xtreme to keep your walls damp-free — sold per litre.</p>
     </div>
   </section>
 
-  <!-- ===== Category Hub ===== -->
   <section class="section" id="buyPage">
     <div class="container">
       <div class="section-head">
-        <span class="section-label">Shop by Category</span>
-        <h2>Pick A <span class="accent">Category</span></h2>
-        <p>Paints are sold per litre. Brushes &amp; rollers are sold per piece.</p>
+        <span class="section-label">Waterproofing Range</span>
+        <h2>Choose Your <span class="accent">Quantity (Litres)</span></h2>
+        <p>All prices are per litre. Adjust the litres and press Add to Cart.</p>
       </div>
-      <div class="cat-grid">
-        <a class="cat-card" href="buy-interior.html">
-          <span class="cat-icon">&#127968;</span>
-          <h3>Interior Paints</h3>
-          <p>Royale, Apcolite &amp; Tractor emulsions — per litre.</p>
-          <span class="cat-link">Shop Interior &rarr;</span>
-        </a>
-        <a class="cat-card" href="buy-exterior.html">
-          <span class="cat-icon">&#127970;</span>
-          <h3>Exterior Paints</h3>
-          <p>Apex, Ultima Protek, Ace &amp; Weatherproof — per litre.</p>
-          <span class="cat-link">Shop Exterior &rarr;</span>
-        </a>
-        <a class="cat-card" href="buy-brush.html">
-          <span class="cat-icon">&#128396;</span>
-          <h3>Painting Brushes</h3>
-          <p>1&Prime;, 1.5&Prime;, 2&Prime;, 2.5&Prime; &amp; 3&Prime; — per piece.</p>
-          <span class="cat-link">Shop Brushes &rarr;</span>
-        </a>
-        <a class="cat-card" href="buy-roller.html">
-          <span class="cat-icon">&#128374;</span>
-          <h3>Paint Rollers</h3>
-          <p>Rollers &amp; tray sets for fast coverage — per piece.</p>
-          <span class="cat-link">Shop Rollers &rarr;</span>
-        </a>
-        <a class="cat-card" href="buy-primer.html">
-          <span class="cat-icon">&#128230;</span>
-          <h3>Wall Primers</h3>
-          <p>Interior &amp; exterior primers — per litre.</p>
-          <span class="cat-link">Shop Primers &rarr;</span>
-        </a>
-        <a class="cat-card" href="buy-waterproofing.html">
-          <span class="cat-icon">&#127777;</span>
-          <h3>Waterproofing</h3>
-          <p>SmartCare Damp Proof &amp; Hydroloc — per litre.</p>
-          <span class="cat-link">Shop Waterproofing &rarr;</span>
-        </a>
-        <a class="cat-card" href="buy-enamel.html">
-          <span class="cat-icon">&#127982;</span>
-          <h3>Enamels &amp; Primers</h3>
-          <p>Enamel colours, metal &amp; wood primers, thinners — per litre.</p>
-          <span class="cat-link">Shop Enamels &rarr;</span>
-        </a>
-      </div>
+      <div class="products-grid buy-grid" id="buyGrid"></div>
     </div>
   </section>
 
-  <!-- ===== Footer ===== -->
   <footer class="footer">
     <div class="container footer-grid">
       <div>
@@ -116,9 +68,10 @@
         <h3>Quick Links</h3>
         <ul>
           <li><a href="index.html">Home</a></li>
-          <li><a href="index.html#about">About</a></li>
-          <li><a href="buy.html">Buy</a></li>
-          <li><a href="index.html#contact">Contact</a></li>
+          <li><a href="buy.html">Shop</a></li>
+          <li><a href="buy-interior.html">Interior</a></li>
+          <li><a href="buy-exterior.html">Exterior</a></li>
+          <li><a href="buy-waterproofing.html">Waterproofing</a></li>
         </ul>
       </div>
       <div>
@@ -136,7 +89,6 @@
     </div>
   </footer>
 
-  <!-- ===== Cart Drawer ===== -->
   <div class="cart-overlay" id="cartOverlay"></div>
   <aside class="cart-drawer" id="cartDrawer">
     <div class="cart-header">
@@ -153,7 +105,6 @@
     </div>
   </aside>
 
-  <!-- ===== Checkout Modal ===== -->
   <div class="modal-overlay" id="checkoutModalOverlay"></div>
   <div class="checkout-modal" id="checkoutModal">
     <div class="modal-header">

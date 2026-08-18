@@ -1,4 +1,4 @@
-const { pool, send, requireAdmin } = require('../../_lib');
+const { pool, send, requireAdmin } = require('../../../api/_lib');
 
 module.exports = async (req, res) => {
   if (!requireAdmin(req, res)) return;

@@ -99,6 +99,17 @@ const PRODUCTS = [
   { id: 22, name: 'Roller 7"',                  category: 'roller',   price: 130, unit: 'pc',  kind: 'roller', tag: '7 inch' },
   { id: 23, name: 'Roller 9"',                  category: 'roller',   price: 160, unit: 'pc',  kind: 'roller', tag: '9 inch' },
   { id: 24, name: 'Roller Tray & Set',          category: 'roller',   price: 250, unit: 'pc',  kind: 'roller', tag: 'complete set' },
+  { id: 25, name: 'SmartCare Damp Proof',       category: 'waterproofing', price: 350, unit: 'L', kind: 'drum',  color: '#cfe6f5' },
+  { id: 26, name: 'SmartCare Hydroloc Xtreme',  category: 'waterproofing', price: 650, unit: 'L', kind: 'drum',  color: '#dfeef7' },
+  { id: 27, name: 'Metal Primer',               category: 'enamel',   price: 220, unit: 'L',  kind: 'drum',  color: '#8f9296' },
+  { id: 28, name: 'Wood Primer (Pink)',         category: 'enamel',   price: 250, unit: 'L',  kind: 'drum',  color: '#f2b6c0' },
+  { id: 29, name: 'Wood Primer (White)',        category: 'enamel',   price: 250, unit: 'L',  kind: 'drum',  color: '#f4f2ed' },
+  { id: 30, name: 'Premium Gloss Enamel — Blaze White', category: 'enamel', price: 380, unit: 'L', kind: 'drum', color: '#ffffff' },
+  { id: 31, name: 'Premium Gloss Enamel — PGE Brown',   category: 'enamel', price: 380, unit: 'L', kind: 'drum', color: '#6b4423' },
+  { id: 32, name: 'Premium Gloss Enamel — Golden Yellow', category: 'enamel', price: 380, unit: 'L', kind: 'drum', color: '#f5c518' },
+  { id: 33, name: 'Premium Gloss Enamel — Black',        category: 'enamel', price: 380, unit: 'L', kind: 'drum', color: '#1a1a1a' },
+  { id: 34, name: 'Premium Gloss Enamel — Smokey Grey',  category: 'enamel', price: 380, unit: 'L', kind: 'drum', color: '#6e7275' },
+  { id: 35, name: 'WoodTech GP Thinner (Turpentine)',    category: 'enamel', price: 160, unit: 'L', kind: 'drum', color: '#f7f3e6' },
 ];
 
 const seeded = db.prepare('SELECT COUNT(*) AS c FROM products').get();
