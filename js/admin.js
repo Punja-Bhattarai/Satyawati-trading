@@ -59,7 +59,7 @@ document.addEventListener('DOMContentLoaded', () => {
         loginError.textContent = 'Wrong password. Try again.';
         loginError.classList.remove('hidden');
       } else {
-        loginError.textContent = 'Server not reachable — open the admin page at http://localhost:3000/admin.html';
+        loginError.textContent = 'Backend server not reachable. Make sure the Node server is running on your host.';
         loginError.classList.remove('hidden');
       }
     } catch (err) {

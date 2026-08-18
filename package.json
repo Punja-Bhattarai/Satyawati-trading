@@ -1,12 +1,16 @@
 {
   "name": "satyawati-paints-website",
   "version": "1.0.0",
-  "description": "Satyawati Trading & Paints Suppliers — website with cart, orders and admin dashboard",
+  "description": "Satyawati Trading & Paints Suppliers — Vercel (static + serverless API) with Supabase",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "dev:local": "node server.js"
+  },
+  "dependencies": {
+    "pg": "^8.13.1"
   },
   "engines": {
-    "node": ">=22.5.0"
+    "node": ">=22.13.0"
   }
 }

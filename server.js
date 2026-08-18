@@ -14,8 +14,8 @@ const { DatabaseSync } = require('node:sqlite');
 const PORT = process.env.PORT || 3000;
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'satyawati123';
 const ROOT = __dirname;
-const DATA_DIR = path.join(ROOT, 'data');
-const DB_PATH = path.join(DATA_DIR, 'shop.db');
+const DATA_DIR = process.env.DB_PATH ? path.dirname(process.env.DB_PATH) : path.join(ROOT, 'data');
+const DB_PATH = process.env.DB_PATH || path.join(DATA_DIR, 'shop.db');
 
 fs.mkdirSync(DATA_DIR, { recursive: true });
 const db = new DatabaseSync(DB_PATH);

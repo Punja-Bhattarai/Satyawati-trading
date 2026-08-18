@@ -279,7 +279,7 @@
       return JSON.parse(text);
     } catch (err) {
       throw new Error(
-        'The server did not respond. Please open the website at http://localhost:3000 and try again.'
+        'The server did not respond correctly. Please try again in a minute.'
       );
     }
   }
