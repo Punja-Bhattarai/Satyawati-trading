@@ -11,7 +11,7 @@
   /* ============================================================
      SHADE PALETTE  (name, code, hex, family)
   ============================================================ */
-  const SHADES = [
+  const SHADES = (typeof window !== 'undefined' && window.ASIAN_SHADES) ? window.ASIAN_SHADES : [
     { n: 'Droplet', c: '9322', h: '#4d8fc9', f: 'Blue' },
     { n: 'Royal Blue', c: '9833', h: '#2f5fb3', f: 'Blue' },
     { n: 'Sky Blue', c: '9330', h: '#7db8e0', f: 'Blue' },
@@ -53,7 +53,7 @@
     { n: 'Coffee', c: '8080', h: '#8a6240', f: 'Brown' },
   ];
 
-  const FAMILIES = ['White', 'Cream', 'Beige', 'Red', 'Pink', 'Orange', 'Yellow', 'Green', 'Blue', 'Purple', 'Grey', 'Brown'];
+  const FAMILIES = [...new Set(SHADES.map((s) => s.f))].sort();
 
   /* ============================================================
      STATE
