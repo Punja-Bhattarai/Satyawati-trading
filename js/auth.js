@@ -62,6 +62,17 @@
     const nav = document.querySelector('.nav');
     if (!nav) return;
 
+    let adminBtn = document.getElementById('adminBtn');
+    if (!adminBtn) {
+      adminBtn = document.createElement('a');
+      adminBtn.className = 'admin-btn';
+      adminBtn.id = 'adminBtn';
+      adminBtn.href = 'admin.html';
+      adminBtn.title = 'Admin panel';
+      adminBtn.innerHTML = '<span class="admin-icon">&#9881;</span><span class="admin-label">Admin</span>';
+      nav.insertBefore(adminBtn, cartBtn || null);
+    }
+
     let btn = document.getElementById('accountBtn');
     if (!btn) {
       btn = document.createElement('button');

@@ -354,11 +354,12 @@
           const o = i * 4;
           const lum = 0.299 * base[o] + 0.587 * base[o + 1] + 0.114 * base[o + 2];
           let f = mean > 0 ? lum / mean : 1;
-          f = Math.max(0.3, Math.min(2.2, f));
+          f = 0.5 + 0.5 * f;
+          f = Math.max(0.75, Math.min(1.25, f));
           const t = a / 255;
-          out[o] = base[o] * (1 - t) + Math.max(0, Math.min(255, color.r * f)) * t;
-          out[o + 1] = base[o + 1] * (1 - t) + Math.max(0, Math.min(255, color.g * f)) * t;
-          out[o + 2] = base[o + 2] * (1 - t) + Math.max(0, Math.min(255, color.b * f)) * t;
+          out[o] = out[o] * (1 - t) + Math.max(0, Math.min(255, color.r * f)) * t;
+          out[o + 1] = out[o + 1] * (1 - t) + Math.max(0, Math.min(255, color.g * f)) * t;
+          out[o + 2] = out[o + 2] * (1 - t) + Math.max(0, Math.min(255, color.b * f)) * t;
         }
       }
     }
@@ -411,7 +412,7 @@
         if (soft > 0) {
           fall = Math.max(0, 1 - (d / r));
           fall = fall * fall * (3 - 2 * fall);
-          fall = 0.15 + 0.85 * fall;
+          fall = 0.45 + 0.55 * fall;
         }
         const v = Math.round(255 * fall);
         const i = py * state.width + px;
@@ -557,6 +558,11 @@
      POINTER / TOUCH — painting only (photo always fits)
   ============================================================ */
   const wrap = $('#canvasWrap');
+  const canvasActions = $('#canvasActions');
+
+  canvasActions.addEventListener('pointerdown', (e) => e.stopPropagation());
+  canvasActions.addEventListener('pointerup', (e) => e.stopPropagation());
+  canvasActions.addEventListener('click', (e) => e.stopPropagation());
 
   function canvasPos(clientX, clientY) {
     const rect = canvas.getBoundingClientRect();
@@ -735,19 +741,80 @@
     if (!chip) return;
     const shade = SHADES.find((s) => s.c === chip.dataset.code);
     if (!shade) return;
+    selectShade(shade);
+  });
+
+  function selectShade(shade) {
     state.shade = shade;
     $('#shadeCurrent').textContent = shade.n + ' · ' + shade.c;
     $('#shadeCurrent').style.background = shade.h;
     $('#shadeCurrent').style.color = shade.h === '#ffffff' ? '#1c1c1c' : '#fff';
+    const chip = $('#curShadeChip');
+    if (chip) chip.querySelector('i').style.background = shade.h;
     renderShades();
     updateCanvasHint();
+  }
+
+  /* ---------- Search Shades menu ---------- */
+  function openShadeSearch() {
+    $('#shadeSearchOverlay').classList.add('show');
+    $('#shadeSearchModal').classList.add('show');
+    $('#shadeSearchModal').style.opacity = 1;
+    $('#shadeSearchModal').style.visibility = 'visible';
+    $('#shadeSearchInput').value = '';
+    renderShadeSearch('');
+    setTimeout(() => $('#shadeSearchInput').focus(), 60);
+  }
+
+  function closeShadeSearch() {
+    $('#shadeSearchOverlay').classList.remove('show');
+    $('#shadeSearchModal').classList.remove('show');
+    $('#shadeSearchModal').style.opacity = 0;
+    $('#shadeSearchModal').style.visibility = 'hidden';
+  }
+
+  function renderShadeSearch(q) {
+    const grid = $('#shadeSearchResults');
+    q = q.trim().toLowerCase();
+    const list = q
+      ? SHADES.filter((s) => s.n.toLowerCase().includes(q) || s.c.toLowerCase().includes(q)).slice(0, 120)
+      : [];
+    grid.innerHTML = list.length
+      ? list.map((s) =>
+          '<button class="ss-tile" data-code="' + s.c + '" type="button">' +
+          '<span class="ss-swatch" style="background:' + s.h + '"></span>' +
+          '<span class="ss-name">' + s.n + '</span>' +
+          '<span class="ss-code">' + s.c + '</span>' +
+          '</button>'
+        ).join('')
+      : '<p class="ss-empty">' + (q ? 'No shades match "' + q + '".' : 'Start typing a shade name or code to see matching colours.') + '</p>';
+  }
+
+  $('#openShadeSearchBtn').addEventListener('click', openShadeSearch);
+  $('#shadeSearchClose').addEventListener('click', closeShadeSearch);
+  $('#shadeSearchOverlay').addEventListener('click', closeShadeSearch);
+  $('#shadeSearchInput').addEventListener('input', (e) => renderShadeSearch(e.target.value));
+  $('#shadeSearchInput').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      const first = $('#shadeSearchResults').querySelector('.ss-tile');
+      if (first) first.click();
+    }
+  });
+  $('#shadeSearchResults').addEventListener('click', (e) => {
+    const tile = e.target.closest('.ss-tile');
+    if (!tile) return;
+    const shade = SHADES.find((s) => s.c === tile.dataset.code);
+    if (!shade) return;
+    selectShade(shade);
+    closeShadeSearch();
+    toast('Shade selected: ' + shade.n + ' · ' + shade.c);
   });
 
   function updateCanvasHint() {
     const hint = $('#canvasHint');
     if (!hint) return;
     if (state.tool === 'smart') hint.textContent = state.shade ? 'Tap a wall to paint it ' + state.shade.n : 'Pick a shade, then tap a wall';
-    else if (state.tool === 'select') hint.textContent = 'Tap dots around the part, then tap Finish';
+    else if (state.tool === 'select') hint.textContent = 'Tap dots around the part, then press the check (Finish) below';
     else if (state.tool === 'brush') hint.textContent = 'Drag to paint with the brush';
     else hint.textContent = 'Erase from the selected region';
   }

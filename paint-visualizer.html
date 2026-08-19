@@ -3,6 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" type="image/png" href="assets/favicon.png" />
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png" />
   <title>Paint Visualizer | Satyawati Trading &amp; Paints Suppliers</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -70,21 +72,11 @@
             <button class="tool-btn" data-tool="select" type="button">&#9998; Select</button>
             <button class="tool-btn" data-tool="brush" type="button">&#128396; Brush</button>
             <button class="tool-btn" data-tool="eraser" type="button">&#129703; Eraser</button>
-          </div>
-          <div class="tool-group">
-            <button class="tool-btn" id="undoBtn" type="button" title="Undo">&#8630; Undo</button>
-            <button class="tool-btn" id="redoBtn" type="button" title="Redo">&#8631; Redo</button>
-            <button class="tool-btn" id="clearRegionBtn" type="button" title="Clear the selected region">Clear Region</button>
-            <button class="tool-btn" id="resetBtn" type="button" title="Reset all regions">Reset</button>
+            <button class="tool-btn highlight" id="openShadeSearchBtn" type="button">&#128269; Search Shades</button>
           </div>
           <div class="tool-group vis-range">
             <label>Size <input type="range" id="brushSize" min="4" max="140" value="50" /></label>
             <label>Softness <input type="range" id="brushSoft" min="0" max="100" value="60" /></label>
-          </div>
-          <div class="select-bar hidden" id="selectBar">
-            <button class="tool-btn" id="finishSelectBtn" type="button">&#9989; Finish</button>
-            <button class="tool-btn" id="undoPointBtn" type="button">Undo Point</button>
-            <button class="tool-btn" id="clearSelectBtn" type="button">Clear</button>
           </div>
         </div>
 
@@ -93,6 +85,19 @@
             <canvas id="paintCanvas" width="1100" height="700"></canvas>
             <canvas id="lassoCanvas" width="1100" height="700"></canvas>
             <div class="canvas-hint" id="canvasHint">Pick a shade, then tap a wall</div>
+            <div class="canvas-actions" id="canvasActions">
+              <span class="cur-shade" id="curShadeChip" title="Current shade"><i></i></span>
+              <button class="fab-btn" id="undoBtn" type="button" title="Undo last paint">&#8630; Undo</button>
+              <button class="fab-btn" id="redoBtn" type="button" title="Redo paint">&#8631; Redo</button>
+              <button class="fab-btn" id="clearRegionBtn" type="button" title="Clear the selected region">&#10006; Clear</button>
+              <button class="fab-btn" id="resetBtn" type="button" title="Reset all paint">&#128465; Reset</button>
+              <span class="fab-divider"></span>
+              <div class="select-bar hidden" id="selectBar">
+                <button class="fab-btn" id="finishSelectBtn" type="button" title="Finish selection">&#9989; Finish</button>
+                <button class="fab-btn" id="undoPointBtn" type="button" title="Remove last point">&#8617; Point</button>
+                <button class="fab-btn" id="clearSelectBtn" type="button" title="Clear selection">&#128465; Clear</button>
+              </div>
+            </div>
           </div>
           <aside class="shade-panel">
             <div class="shade-head">
@@ -221,6 +226,16 @@
       <img id="viewModalImg" src="" alt="Design preview" />
       <figcaption id="viewModalCaption"></figcaption>
     </figure>
+  </div>
+
+  <div class="modal-overlay" id="shadeSearchOverlay"></div>
+  <div class="checkout-modal" id="shadeSearchModal" aria-hidden="true">
+    <div class="modal-header">
+      <h3>Search Shades</h3>
+      <button class="cart-close" id="shadeSearchClose" aria-label="Close">&#10005;</button>
+    </div>
+    <input class="shade-search" id="shadeSearchInput" placeholder="Type a shade name or code, e.g. Droplet or 9322" autocomplete="off" />
+    <div class="ss-results" id="shadeSearchResults"></div>
   </div>
 
   <script src="js/auth.js"></script>

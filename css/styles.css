@@ -1507,6 +1507,18 @@ ul {
     width: 100%;
     text-align: center;
   }
+
+  .admin-btn,
+  .account-btn {
+    width: 46px;
+    padding: 0;
+    justify-content: center;
+  }
+
+  .admin-label,
+  .account-label {
+    display: none;
+  }
 }
 
 @media (max-width: 520px) {
@@ -1650,6 +1662,30 @@ ul {
   font-weight: 600;
   color: var(--ink);
   transition: 0.25s ease;
+}
+
+.admin-btn {
+  position: relative;
+  width: auto;
+  height: 46px;
+  padding: 0 16px;
+  border-radius: 50px;
+  border: 1px solid var(--line);
+  background: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--ink);
+  text-decoration: none;
+  transition: 0.25s ease;
+}
+
+.admin-btn:hover {
+  border-color: var(--red);
+  color: var(--red);
 }
 
 .account-btn:hover {
