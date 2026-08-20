@@ -73,23 +73,174 @@
   gap: 18px;
 }
 
-.editor-toolbar {
+/* ============================================================
+   FULL-SCREEN EDITOR
+============================================================ */
+.fs-editor {
+  position: fixed;
+  inset: 0;
+  z-index: 210;
   display: flex;
-  flex-wrap: wrap;
-  gap: 14px;
-  align-items: flex-end;
-  justify-content: space-between;
-  background: #fff;
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  padding: 14px 16px;
+  flex-direction: column;
+  background: #101012;
 }
 
-.tool-group {
+.fs-top {
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
   align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: #1a1a1e;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  color: #fff;
+  flex-wrap: wrap;
+}
+
+.fs-title {
+  font-weight: 700;
+  font-size: 1.05rem;
+  margin-right: auto;
+}
+
+.fs-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.fs-top .btn {
+  border-radius: 10px;
+}
+
+.fs-body {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 172px minmax(0, 1fr) 300px;
+  grid-template-rows: minmax(0, 1fr);
+  min-height: 0;
+}
+
+.fs-rail {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px;
+  background: #1a1a1e;
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.rail-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #8a8a9a;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-top: 6px;
+}
+
+.fs-rail .tool-btn {
+  background: #232329;
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  text-align: left;
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-size: 0.84rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.2s ease;
+  font-family: inherit;
+}
+
+.fs-rail .tool-btn:hover {
+  border-color: var(--red);
+  color: #fff;
+}
+
+.fs-rail .tool-btn.active {
+  background: var(--red);
+  border-color: var(--red);
+  color: #fff;
+}
+
+.fs-rail .erase-modes {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.fs-rail .erase-modes .tool-btn {
+  width: auto;
+  flex: 1;
+  text-align: center;
+  padding: 8px 6px;
+  font-size: 0.74rem;
+}
+
+.fs-rail .vis-range {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: stretch;
+}
+
+.fs-rail .vis-range label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #c9c9d4;
+}
+
+.fs-rail .vis-range input[type="range"] {
+  accent-color: var(--red);
+  width: 100px;
+}
+
+.fs-rail .tool-btn.highlight {
+  background: var(--red);
+  border-color: var(--red);
+  color: #fff;
+}
+
+.fs-center {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  padding: 14px;
+  gap: 12px;
+}
+
+.canvas-holder {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+  position: relative;
+}
+
+.canvas-wrap {
+  position: relative;
+  background: #151515;
+  border-radius: 14px;
+  overflow: hidden;
+  max-width: 100%;
+  max-height: 100%;
+  touch-action: none;
+  cursor: crosshair;
+  flex: none;
+  line-height: 0;
+}
+
+.canvas-wrap canvas {
+  display: block;
 }
 
 .tool-label {
@@ -218,31 +369,6 @@
 }
 
 /* ---------- Stage ---------- */
-.editor-stage {
-  display: grid;
-  grid-template-columns: 1fr 300px;
-  gap: 18px;
-  align-items: start;
-}
-
-.canvas-wrap {
-  position: relative;
-  background: #151515;
-  border-radius: var(--radius);
-  overflow: hidden;
-  min-height: 320px;
-  touch-action: none;
-  cursor: crosshair;
-}
-
-.canvas-wrap canvas {
-  display: block;
-  width: 100%;
-  height: auto;
-  transform-origin: 0 0;
-  max-width: none;
-}
-
 #lassoCanvas {
   position: absolute;
   inset: 0;
@@ -251,22 +377,63 @@
   pointer-events: none;
 }
 
-.canvas-actions {
-  position: absolute;
-  left: 50%;
-  bottom: 16px;
-  transform: translateX(-50%);
+.fs-actions-bar {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
-  padding: 8px 10px;
-  border-radius: 50px;
-  background: rgba(22, 22, 22, 0.82);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  box-shadow: 0 8px 26px rgba(0, 0, 0, 0.35);
-  z-index: 5;
+  flex-wrap: wrap;
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: #1a1a1e;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.fs-regions {
+  background: #1a1a1e;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 12px 14px;
+  max-height: 150px;
+  overflow-y: auto;
+}
+
+.fs-regions h4,
+.fs-regions .region-title {
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.fs-regions .region-empty {
+  color: #8a8a9a;
+  font-size: 0.8rem;
+}
+
+.fs-regions .region-row {
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.fs-regions .region-row:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.fs-regions .region-row.active {
+  border-color: var(--red);
+  background: rgba(228, 0, 43, 0.28);
+}
+
+.fs-regions .region-name {
+  color: #fff;
+}
+
+.fs-regions .region-code {
+  color: #9a9aaa;
+}
+
+.fs-regions .region-del {
+  color: #ff8a9a;
 }
 
 .fab-btn {
@@ -355,11 +522,12 @@
 /* ---------- Shade panel ---------- */
 .shade-panel {
   background: #fff;
-  border: 1px solid var(--line);
+  border: none;
   border-radius: var(--radius);
   padding: 16px;
-  max-height: 640px;
+  max-height: 100%;
   overflow-y: auto;
+  min-height: 0;
 }
 
 .shade-head {
@@ -735,23 +903,40 @@
 
 /* ---------- Responsive ---------- */
 @media (max-width: 900px) {
-  .editor-stage {
+  .fs-body {
     grid-template-columns: 1fr;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    overflow-y: auto;
+  }
+  .fs-rail {
+    grid-column: 1;
+    grid-row: 1;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-start;
+    border-right: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  }
+  .fs-rail .tool-btn {
+    width: auto;
+  }
+  .fs-rail .vis-range {
+    flex-direction: row;
+  }
+  .fs-center {
+    grid-column: 1;
+    grid-row: 2;
+    min-height: 340px;
   }
   .shade-panel {
-    max-height: 340px;
+    grid-column: 1;
+    grid-row: 3;
+    max-height: 300px;
   }
-  .editor-footer {
-    grid-template-columns: 1fr;
-  }
-  .editor-actions {
-    justify-content: flex-start;
-  }
-  .canvas-actions {
-    bottom: 10px;
-    max-width: calc(100% - 20px);
-    flex-wrap: wrap;
+  .fs-actions-bar {
     justify-content: center;
+    max-width: 100%;
   }
 }
 
@@ -759,12 +944,12 @@
   .vis-hero {
     padding: 110px 0 56px;
   }
-  .editor-toolbar {
-    flex-direction: column;
-    align-items: stretch;
+  .fs-top {
+    gap: 8px;
   }
-  .tool-group {
-    justify-content: flex-start;
+  .fs-actions .btn {
+    padding: 8px 12px;
+    font-size: 0.8rem;
   }
   .upload-zone {
     padding: 40px 18px;

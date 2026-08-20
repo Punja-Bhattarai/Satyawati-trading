@@ -66,12 +66,11 @@
     regions: [],
     selectedId: null,
     tool: 'smart',
+    eraseMode: 'brush', // eraser: 'brush' | 'select' (dots)
     shade: null,        // current shade {n,c,h,f}
     undo: [],
     redo: [],
-    view: { scale: 1, tx: 0, ty: 0 },
     painting: false,
-    paintingRegion: null,
     lastX: -1,
     lastY: -1,
   };
@@ -109,6 +108,26 @@
     state.undo.push(snapshot());
     if (state.undo.length > 50) state.undo.shift();
     state.redo = [];
+  }
+
+  function fitCanvas() {
+    if (!state.width || !state.height) return;
+    const holder = document.querySelector('.canvas-holder');
+    if (!holder) return;
+    const pad = 16;
+    const hw = holder.clientWidth - pad;
+    const hh = holder.clientHeight - pad;
+    if (hw <= 0 || hh <= 0) return;
+    const scale = Math.min(hw / state.width, hh / state.height);
+    const w = Math.round(state.width * scale);
+    const h = Math.round(state.height * scale);
+    canvas.style.width = w + 'px';
+    canvas.style.height = h + 'px';
+    const wrap = document.querySelector('.canvas-wrap');
+    if (wrap) {
+      wrap.style.width = w + 'px';
+      wrap.style.height = h + 'px';
+    }
   }
 
   function toast(msg) {
@@ -179,7 +198,7 @@
 
       $('#uploadStep').classList.add('hidden');
       $('#editorStep').classList.remove('hidden');
-      $('#studio').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      fitCanvas();
       updateCanvasHint();
       renderRegions();
       updateToolButtons();
@@ -377,22 +396,26 @@
       toast('Pick a shade first.');
       return;
     }
-    let region = state.regions.find((r) => r.id === state.selectedId);
-    if (!region) {
-      if (state.tool === 'eraser') {
-        toast('Select a painted region to erase from.');
-        return;
+    const erase = state.tool === 'eraser';
+    if (erase && !state.regions.length) {
+      toast('Nothing painted to erase yet.');
+      return;
+    }
+    let region = null;
+    if (!erase) {
+      region = state.regions.find((r) => r.id === state.selectedId);
+      if (!region) {
+        region = {
+          id: Date.now() + Math.random(),
+          mask: new Uint8Array(state.width * state.height),
+          color: hexToRgb(state.shade.h),
+          hex: state.shade.h,
+          name: state.shade.n,
+          code: state.shade.c,
+        };
+        state.regions.push(region);
+        state.selectedId = region.id;
       }
-      region = {
-        id: Date.now() + Math.random(),
-        mask: new Uint8Array(state.width * state.height),
-        color: hexToRgb(state.shade.h),
-        hex: state.shade.h,
-        name: state.shade.n,
-        code: state.shade.c,
-      };
-      state.regions.push(region);
-      state.selectedId = region.id;
     }
 
     const size = Number($('#brushSize').value);
@@ -402,7 +425,6 @@
     const y0 = Math.max(0, Math.floor(y - r));
     const x1 = Math.min(state.width - 1, Math.ceil(x + r));
     const y1 = Math.min(state.height - 1, Math.ceil(y + r));
-    const erase = state.tool === 'eraser';
 
     for (let py = y0; py <= y1; py++) {
       for (let px = x0; px <= x1; px++) {
@@ -417,7 +439,7 @@
         const v = Math.round(255 * fall);
         const i = py * state.width + px;
         if (erase) {
-          region.mask[i] = Math.min(region.mask[i], 255 - v);
+          state.regions.forEach((reg) => { reg.mask[i] = Math.min(reg.mask[i], 255 - v); });
         } else {
           region.mask[i] = Math.max(region.mask[i], v);
         }
@@ -430,7 +452,7 @@
       smartPaint(Math.round(x), Math.round(y));
       return;
     }
-    if (state.tool === 'select') {
+    if (state.tool === 'select' || (state.tool === 'eraser' && state.eraseMode === 'select')) {
       addSelectPoint(Math.round(x), Math.round(y));
       return;
     }
@@ -545,6 +567,10 @@
     }
     const mask = polygonMask(state.lasso, state.width, state.height);
     clearLasso();
+    if (state.tool === 'eraser') {
+      applyEraseSelection(mask);
+      return;
+    }
     if (!state.shade) {
       toast('Pick a shade first — the selection paints it.');
       return;
@@ -552,6 +578,20 @@
     pushUndo();
     addRegion(mask, state.shade);
     renderCanvas();
+  }
+
+  function applyEraseSelection(mask) {
+    if (!state.regions.length) {
+      toast('Nothing painted to erase.');
+      return;
+    }
+    pushUndo();
+    for (let i = 0; i < mask.length; i++) {
+      if (!mask[i]) continue;
+      state.regions.forEach((r) => { r.mask[i] = 0; });
+    }
+    renderCanvas();
+    renderRegions();
   }
 
   /* ============================================================
@@ -816,25 +856,50 @@
     if (state.tool === 'smart') hint.textContent = state.shade ? 'Tap a wall to paint it ' + state.shade.n : 'Pick a shade, then tap a wall';
     else if (state.tool === 'select') hint.textContent = 'Tap dots around the part, then press the check (Finish) below';
     else if (state.tool === 'brush') hint.textContent = 'Drag to paint with the brush';
-    else hint.textContent = 'Erase from the selected region';
+    else if (state.tool === 'eraser' && state.eraseMode === 'select') hint.textContent = 'Tap dots around the paint to erase, then press the check (Finish) below';
+    else hint.textContent = 'Drag to erase paint';
   }
 
   /* ============================================================
      TOOL BUTTONS
   ============================================================ */
+  function updateActionVisibility() {
+    const selectBar = $('#selectBar');
+    const eraseModes = $('#eraseModes');
+    if (selectBar) selectBar.classList.toggle('hidden', !(state.tool === 'select' || (state.tool === 'eraser' && state.eraseMode === 'select')));
+    if (eraseModes) eraseModes.classList.toggle('hidden', state.tool !== 'eraser');
+  }
+
   document.querySelectorAll('.tool-btn[data-tool]').forEach((b) => {
     b.addEventListener('click', () => {
       state.tool = b.dataset.tool;
       state.painting = false;
       clearLasso();
       document.querySelectorAll('.tool-btn[data-tool]').forEach((x) => x.classList.toggle('active', x === b));
-      const selectBar = $('#selectBar');
-      if (selectBar) selectBar.classList.toggle('hidden', state.tool !== 'select');
+      updateActionVisibility();
       if (state.tool !== 'smart' && !state.regions.length && !state.shade) {
         toast('Pick a shade first — the brush paints the selected shade.');
       }
       updateCanvasHint();
     });
+  });
+
+  $('#eraseBrushMode').addEventListener('click', () => {
+    state.eraseMode = 'brush';
+    $('#eraseBrushMode').classList.add('active');
+    $('#eraseSelectMode').classList.remove('active');
+    clearLasso();
+    updateActionVisibility();
+    updateCanvasHint();
+  });
+
+  $('#eraseSelectMode').addEventListener('click', () => {
+    state.eraseMode = 'select';
+    $('#eraseSelectMode').classList.add('active');
+    $('#eraseBrushMode').classList.remove('active');
+    clearLasso();
+    updateActionVisibility();
+    updateCanvasHint();
   });
 
   $('#finishSelectBtn').addEventListener('click', applySelection);
@@ -853,6 +918,22 @@
   ============================================================ */
   const zone = $('#uploadZone');
   const fileInput = $('#fileInput');
+
+  $('#newPhotoBtn').addEventListener('click', () => {
+    $('#editorStep').classList.add('hidden');
+    $('#uploadStep').classList.remove('hidden');
+    state.regions = [];
+    state.selectedId = null;
+    state.undo = [];
+    state.redo = [];
+    clearLasso();
+    if (lctx) lctx.clearRect(0, 0, state.width, state.height);
+    window.scrollTo(0, 0);
+  });
+
+  window.addEventListener('resize', () => {
+    if (!$('#editorStep').classList.contains('hidden')) fitCanvas();
+  });
   zone.addEventListener('click', () => fileInput.click());
   $('#pickBtn').addEventListener('click', (e) => { e.stopPropagation(); fileInput.click(); });
   fileInput.addEventListener('change', () => loadFile(fileInput.files[0]));

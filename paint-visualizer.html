@@ -63,29 +63,47 @@
         </div>
       </div>
 
-      <!-- ===== Step 2: Editor ===== -->
-      <div id="editorStep" class="hidden">
-        <div class="editor-toolbar">
-          <div class="tool-group">
-            <span class="tool-label">Tool</span>
+      <!-- ===== Step 2: Full-screen Editor ===== -->
+      <div id="editorStep" class="hidden fs-editor">
+        <div class="fs-top">
+          <button class="btn btn-outline" id="newPhotoBtn" type="button">&#11013; New Photo</button>
+          <span class="fs-title">Virtual Paint Studio</span>
+          <div class="fs-actions">
+            <button class="btn btn-outline" id="compareBtn" type="button">Before / After</button>
+            <button class="btn btn-outline" id="downloadBtn" type="button">&#11015; Download</button>
+            <button class="btn btn-primary" id="saveBtn" type="button">Save Design</button>
+            <a class="btn btn-outline" id="shopBtn" href="buy.html">View Selected Paint &rarr;</a>
+          </div>
+        </div>
+
+        <div class="fs-body">
+          <aside class="fs-rail">
+            <span class="rail-label">Tools</span>
             <button class="tool-btn active" data-tool="smart" type="button">&#129521; Smart Paint</button>
             <button class="tool-btn" data-tool="select" type="button">&#9998; Select</button>
             <button class="tool-btn" data-tool="brush" type="button">&#128396; Brush</button>
             <button class="tool-btn" data-tool="eraser" type="button">&#129703; Eraser</button>
+            <div class="erase-modes hidden" id="eraseModes">
+              <button class="tool-btn active" id="eraseBrushMode" type="button">&#128396; Brush</button>
+              <button class="tool-btn" id="eraseSelectMode" type="button">&#9998; Select (dots)</button>
+            </div>
+            <span class="rail-label">Brush</span>
+            <div class="vis-range">
+              <label>Size <input type="range" id="brushSize" min="4" max="140" value="50" /></label>
+              <label>Softness <input type="range" id="brushSoft" min="0" max="100" value="60" /></label>
+            </div>
             <button class="tool-btn highlight" id="openShadeSearchBtn" type="button">&#128269; Search Shades</button>
-          </div>
-          <div class="tool-group vis-range">
-            <label>Size <input type="range" id="brushSize" min="4" max="140" value="50" /></label>
-            <label>Softness <input type="range" id="brushSoft" min="0" max="100" value="60" /></label>
-          </div>
-        </div>
+          </aside>
 
-        <div class="editor-stage">
-          <div class="canvas-wrap" id="canvasWrap">
-            <canvas id="paintCanvas" width="1100" height="700"></canvas>
-            <canvas id="lassoCanvas" width="1100" height="700"></canvas>
-            <div class="canvas-hint" id="canvasHint">Pick a shade, then tap a wall</div>
-            <div class="canvas-actions" id="canvasActions">
+          <div class="fs-center">
+            <div class="canvas-holder">
+              <div class="canvas-wrap" id="canvasWrap">
+                <canvas id="paintCanvas" width="1100" height="700"></canvas>
+                <canvas id="lassoCanvas" width="1100" height="700"></canvas>
+                <div class="canvas-hint" id="canvasHint">Pick a shade, then tap a wall</div>
+              </div>
+            </div>
+            <div class="fs-actions-bar" id="canvasActions">
               <span class="cur-shade" id="curShadeChip" title="Current shade"><i></i></span>
               <button class="fab-btn" id="undoBtn" type="button" title="Undo last paint">&#8630; Undo</button>
               <button class="fab-btn" id="redoBtn" type="button" title="Redo paint">&#8631; Redo</button>
@@ -98,7 +116,12 @@
                 <button class="fab-btn" id="clearSelectBtn" type="button" title="Clear selection">&#128465; Clear</button>
               </div>
             </div>
+            <div class="fs-regions">
+              <h4>Painted Regions</h4>
+              <div id="regionsWrap"><p class="region-empty">No regions yet — pick a shade and tap a wall.</p></div>
+            </div>
           </div>
+
           <aside class="shade-panel">
             <div class="shade-head">
               <h3>Paint Shades</h3>
@@ -108,19 +131,6 @@
             <div class="shade-families" id="shadeFamilies"></div>
             <div class="shade-grid" id="shadeGrid"></div>
           </aside>
-        </div>
-
-        <div class="editor-footer">
-          <div class="region-list">
-            <h4>Painted Regions</h4>
-            <div id="regionsWrap"><p class="region-empty">No regions yet — pick a shade and tap a wall.</p></div>
-          </div>
-          <div class="editor-actions">
-            <button class="btn btn-outline" id="compareBtn" type="button">Before / After</button>
-            <button class="btn btn-outline" id="downloadBtn" type="button">&#11015; Download</button>
-            <button class="btn btn-primary" id="saveBtn" type="button">Save Design</button>
-            <a class="btn btn-outline" id="shopBtn" href="buy.html">View Selected Paint &rarr;</a>
-          </div>
         </div>
       </div>
 
