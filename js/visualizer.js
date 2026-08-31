@@ -269,19 +269,21 @@
     segStack = new Int32Array(n);
   }
 
-  // Edge-aware connected region grow from (sx, sy).
-  // DENSE result: the mask is completed for every pixel of the same surface, so
-  // no original wall color remains visible inside the detected wall. Strong
-  // architectural edges (roof / window / door lines) stop the grow; the sky cap
-  // in smartPaint protects against leaks. Windows/doors stay as legitimate holes.
+  // Edge-aware connected region grow from (sx, sy) producing a COMPLETE mask for
+  // the whole wall surface — shadows, highlights, texture and dirt are all part of
+  // the same paintable wall. Membership is decided by BRIGHTNESS-INVARIANT
+  // chromaticity matching (a dark shadow is the same hue scaled darker; highlights
+  // the same hue scaled brighter) together with a hard gradient barrier at
+  // architectural edges (roof lines, window/door frames). Windows/doors/roof/sky/
+  // plants are excluded because they differ in hue direction (chromaticity).
   function growRegion(data, w, h, sx, sy, opts) {
     const o = opts || {};
     const grad = state.grad;
     const sf = (o.stopFactor !== undefined) ? o.stopFactor : 1;   // < 1 => more conservative
-    const T_SEED = (o.seedTol || 58) * sf;   // generous seed bound => full-surface coverage
-    const T_LUM = (o.lumTol || 75) * sf;     // luminance bound follows shadow gradient
-    const E_BAR = o.edgeBar || 52;           // only strong edges tighten (wall texture/shadows pass)
-    const E_HARD = o.edgeHard || 80;         // very strong edge => only near-identical may cross
+    const C_TOL = (o.chromaTol || 0.13) * (sf < 1 ? 1 : 1); // chromaticity closeness
+    const T_LUM = (o.lumTol || 240) * sf; // wide luminance range -> shadows + highlights
+    const E_BAR = o.edgeBar || 52;        // only strong edges tighten (texture passes)
+    const E_HARD = o.edgeHard || 80;      // very strong edge => require near-identical chroma
 
     const n = w * h;
     const mask = new Uint8Array(n);
@@ -291,6 +293,8 @@
     const o0 = i0 * 4;
     const sr = data[o0], sg = data[o0 + 1], sb = data[o0 + 2];
     const sl = 0.299 * sr + 0.587 * sg + 0.114 * sb;
+    const sL = Math.max(6, sl);
+    const srr = sr / sL, sgg = sg / sL, sbb = sb / sL;
 
     // reuse buffers
     if (!segVisited || segVisited.length !== n) allocSeg(w, h);
@@ -307,23 +311,26 @@
       const oi = i * 4;
       const r = data[oi], g = data[oi + 1], b = data[oi + 2];
       const lum = 0.299 * r + 0.587 * g + 0.114 * b;
-
-      const dR = r - sr, dG = g - sg, dB = b - sb;
-      const dSeed = Math.max(Math.abs(dR), Math.abs(dG), Math.abs(dB));
       const dLum = Math.abs(lum - sl);
-      const gb = grad[i];
 
-      // Surface membership: whole wall (incl. texture/shadows) is within tolerance.
-      const okSurf = dSeed <= T_SEED && dLum <= T_LUM;
-
-      // Gradient barrier: a strong edge stops the grow even if color is similar,
-      // which prevents roof/skylines/windows from being crossed/painted.
-      let ok = okSurf;
-      if (ok && gb >= E_BAR) {
-        ok = gb >= E_HARD ? dSeed <= 7 : dSeed <= 16;
+      // brightness-invariant chromaticity (same surface regardless of shadow/light)
+      let okSurf = false;
+      let dC = 1e9;
+      if (lum >= 8 && sl >= 8) {
+        const rr = r / lum, gg = g / lum, bb = b / lum;
+        dC = Math.max(Math.abs(rr - srr), Math.abs(gg - sgg), Math.abs(bb - sbb));
+        okSurf = dLum <= T_LUM && dC <= C_TOL;
       }
 
-      if (ok) {
+      // gradient barrier stops the grow at architectural edges (roof/window/door).
+      // Shadows/highlights on the wall change color VALUE but not hue, so a strong
+      // edge is only an obstacle if it is also a CHROMA change (a real object edge).
+      const gb = grad[i];
+      if (okSurf && gb >= E_BAR) {
+        okSurf = dC <= 0.06;   // shadows preserve chroma and still cross; objects don't
+      }
+
+      if (okSurf) {
         mask[i] = 255;
         count++;
         const x = i % w;
@@ -334,55 +341,99 @@
       }
     }
 
-    // ---- complete the mask: close thin texture gaps, keep windows as holes ----
+    // ---- complete the mask: fill every enclosed hole/gap, keep real objects
+    //      (window/door/roof/sky) excluded via chromaticity + gradient barrier ----
     let cleaned = mask;
-    if (count > 0) cleaned = closeMask(mask, w, h, data, i0, sr, sg, sb, T_SEED, grad);
+    if (count > 0) cleaned = closeMask(mask, w, h, data, i0, sr, sg, sb, grad, sl, srr, sgg, sbb);
     return { mask: cleaned, count };
   }
 
-  // Close thin ragged gaps inside the wall so no original color shows, WITHOUT
-  // filling enclosed windows/doors (those are legitimately unpainted). A zero
-  // pixel is filled only if it is on the same surface as the wall (color within
-  // tolerance of the seed, not a strong architectural edge) and adjacent to the mask.
-  function closeMask(mask, w, h, data, seedIdx, sr, sg, sb, T_SEED, grad) {
+  // Morphologically close the wall: fill small and medium holes/gaps left by
+  // shadows, texture, dirt and highlights so NO original color remains visible
+  // inside the wall, WITHOUT painting over windows/doors (genuine objects differ
+  // in hue/are separated by strong edges).
+  // A hole is a non-mask pocket inside the wall. We fill any pocket that is NOT
+  // attached to the image border (enclosed) UNLESS it is a real object — a hole is
+  // treated as a real object if its chromaticity clearly differs from the wall
+  // (e.g. a window or door). Small/medium wall-like pockets (shadows, gaps) share
+  // the wall's hue and are filled.
+  function closeMask(mask, w, h, data, seedIdx, sr, sg, sb, grad, sl, srr, sgg, sbb) {
     const n = w * h;
     const out = new Uint8Array(mask);
-    const edgeBar = 55;
-    // fill zero pixels that are 4-adjacent to the mask and same-surface
-    for (let pass = 0; pass < 2; pass++) {
-      for (let y = 0; y < h; y++) {
-        for (let x = 0; x < w; x++) {
-          const i = y * w + x;
-          if (out[i]) continue;
-          const oi = i * 4;
-          const r = data[oi], g = data[oi + 1], b = data[oi + 2];
-          const dSeed = Math.max(Math.abs(r - sr), Math.abs(g - sg), Math.abs(b - sb));
-          if (dSeed > T_SEED) continue;               // different surface -> keep hole (window/door)
-          if (grad && grad[i] >= edgeBar) continue;   // don't bridge a real architectural edge
-          const xl = x > 0 && out[i - 1], xr = x < w - 1 && out[i + 1];
-          const yu = y > 0 && out[i - w], yd = y < h - 1 && out[i + w];
-          if (xl || xr || yu || yd) out[i] = 255;
-        }
+
+    // expand mask slightly to close hairline gaps (never cross a strong edge)
+    const dilated = new Uint8Array(mask);
+    for (let y = 1; y < h - 1; y++) {
+      for (let x = 1; x < w - 1; x++) {
+        const i = y * w + x;
+        if (out[i]) continue;
+        if (grad && grad[i] >= 55) continue;   // never bridge a real edge (window/roof line)
+        const adj = out[i - 1] || out[i + 1] || out[i - w] || out[i + w]
+                 || out[i - 1 - w] || out[i + 1 - w] || out[i - 1 + w] || out[i + 1 + w];
+        if (!adj) continue;
+        const oi = i * 4;
+        const r = data[oi], g = data[oi + 1], b = data[oi + 2];
+        const lumc = 0.299 * r + 0.587 * g + 0.114 * b;
+        if (lumc < 8) continue;
+        const rr = r / lumc, gg = g / lumc, bb = b / lumc;
+        const dC = Math.max(Math.abs(rr - srr), Math.abs(gg - sgg), Math.abs(bb - sbb));
+        if (dC <= 0.12) dilated[i] = 255;   // same wall hue (a shadow), fill it
       }
     }
-    // keep only pixels connected to the seed (safe)
-    const visited = new Int32Array(n);
+    out.set(dilated);
+
+    // drop any disconnected stray island — keep only pixels connected to the wall
+    const wallConnected = new Uint8Array(n);
+    const visited2 = new Int32Array(n);
     const stack = new Int32Array(n);
     let sp = 0;
-    visited[seedIdx] = 1;
+    visited2[seedIdx] = 1;
     stack[sp++] = seedIdx;
-    const res = new Uint8Array(n);
-    res[seedIdx] = 255;
+    wallConnected[seedIdx] = 255;
     while (sp) {
       const i = stack[--sp];
-      const x = i % w, y = (i / w) | 0;
-      const tryP = (j) => { if (out[j] && !visited[j]) { visited[j] = 1; stack[sp++] = j; res[j] = 255; } };
-      if (x > 0 && out[i - 1]) tryP(i - 1);
-      if (x < w - 1 && out[i + 1]) tryP(i + 1);
-      if (y > 0 && out[i - w]) tryP(i - w);
-      if (y < h - 1 && out[i + w]) tryP(i + w);
+      const x = i % w;
+      const tryP = (j) => { if (visited2[j] || !out[j]) return; visited2[j] = 1; wallConnected[j] = 255; stack[sp++] = j; };
+      if (x > 0) tryP(i - 1);
+      if (x < w - 1) tryP(i + 1);
+      if (i >= w) tryP(i - w);
+      if (i < (h - 1) * w) tryP(i + w);
     }
-    return res;
+    out.set(wallConnected);
+
+    // ---- fill enclosed holes: a zero pixel not reachable from the image border
+    //      without crossing the wall is a pocket inside the wall. Fill wall-hued
+    //      pockets (shadows/gaps); leave hue-different pockets (window/door) as holes.
+    const borderVisited = new Uint8Array(n);
+    sp = 0;
+    const bstack = new Int32Array(n);
+    const isBorder = (i) => { const x = i % w, y = (i / w) | 0; return x === 0 || y === 0 || x === w - 1 || y === h - 1; };
+    for (let i = 0; i < n; i++) if (isBorder(i) && !out[i] && !borderVisited[i]) {
+      borderVisited[i] = 1; bstack[sp++] = i;
+    }
+    while (sp) {
+      const i = bstack[--sp];
+      const x = i % w, y = (i / w) | 0;
+      if (x > 0 && !borderVisited[i - 1] && !out[i - 1]) { borderVisited[i - 1] = 1; bstack[sp++] = i - 1; }
+      if (x < w - 1 && !borderVisited[i + 1] && !out[i + 1]) { borderVisited[i + 1] = 1; bstack[sp++] = i + 1; }
+      if (y > 0 && !borderVisited[i - w] && !out[i - w]) { borderVisited[i - w] = 1; bstack[sp++] = i - w; }
+      if (y < h - 1 && !borderVisited[i + w] && !out[i + w]) { borderVisited[i + w] = 1; bstack[sp++] = i + w; }
+    }
+
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        const i = y * w + x;
+        if (out[i] || borderVisited[i]) continue;   // already wall or reachable from outside
+        const oi = i * 4;
+        const r = data[oi], g = data[oi + 1], b = data[oi + 2];
+        const lumc = 0.299 * r + 0.587 * g + 0.114 * b;
+        if (lumc < 8) continue;
+        const rr = r / lumc, gg = g / lumc, bb = b / lumc;
+        const dC = Math.max(Math.abs(rr - srr), Math.abs(gg - sgg), Math.abs(bb - sbb));
+        if (dC <= 0.11) out[i] = 255;   // wall-hued pocket (shadow/lighting gap), fill it
+      }
+    }
+    return out;
   }
 
   /* ============================================================
@@ -445,7 +496,7 @@
     for (let fy = yStart; fy <= yEnd; fy += step) {
       for (let fx = step; fx < w; fx += step) {
         const seed = fy * w + fx;
-        const g = growRegion(data, w, h, fx, fy, { seedTol: 58, lumTol: 75 });
+        const g = growRegion(data, w, h, fx, fy, { chromaTol: 0.13, lumTol: 240 });
         const minPx = preferMore ? 200 : 500;
         if (g.count < minPx) continue;      // too small
         const frac = g.count / n;
@@ -463,7 +514,18 @@
     // kept suggestion's bbox — that means it is a window/door/hole of that wall,
     // not a separate wall.
     tops.sort((a, b) => b.count - a.count);
+    const meanLum = (m) => {
+      let s = 0, c = 0;
+      for (let i = 0; i < n; i++) {
+        if (!m[i]) continue;
+        const o = i * 4;
+        s += 0.299 * data[o] + 0.587 * data[o + 1] + 0.114 * data[o + 2];
+        c++;
+      }
+      return c ? s / c : 0;
+    };
     const kept = [];
+    const keptLum = [];
     for (const t of tops) {
       if (kept.find((k) => overlapFrac(k.mask, t.mask) > 0.55)) continue;
       const bb = maskBBox(t.mask, w, h);
@@ -471,7 +533,19 @@
         const kb = maskBBox(k.mask, w, h);
         return kb && bb[0] >= kb[0] && bb[1] >= kb[1] && bb[2] <= kb[2] && bb[3] <= kb[3];
       })) continue;
+      // ROOF GUARD: a separate region that is much darker than the dominant wall
+      // (e.g. a roof or eave) is not a wall. Drop any candidate whose mean
+      // luminance is < 60% of the largest kept wall's luminance AND sits above it.
+      if (keptLum.length) {
+        const tl = meanLum(t.mask);
+        const mainLum = keptLum[0];
+        if (tl < mainLum * 0.6) {
+          const kbb = maskBBox(kept[0].mask, w, h);
+          if (bb && kbb && bb[1] <= kbb[1]) continue;   // above the wall => likely roof
+        }
+      }
       kept.push(t);
+      keptLum.push(meanLum(t.mask));
       if (kept.length >= 8) break;
     }
     return kept;
@@ -576,42 +650,29 @@
     const py = Math.max(0, Math.min(h - 1, Math.round(y)));
     const i0 = py * w + px;
 
-    // ---- LEVEL 1: attempt full edge-aware grow ----
-    const primary = growRegion(data, w, h, px, py);
-    const pFrac = primary.count / n;
-    const pTop = touchesTop(primary.mask, w, h);
+    // ---- grow a COMPLETE wall mask from the click ----
+    let use = growRegion(data, w, h, px, py);
+    let accepted = use.count > 120;
 
-    // ---- SAFETY CAP (Phase 18 / 17) ----
-    // A wall should almost never be > ~40% of the frame; sky is the #1 leak.
-    // If the region touches the sky band at the top over a wide run, it almost
-    // certainly caught the sky — so we drop down to a bounded fallback instead.
-    // A genuine wall can fill a large portion of the frame. The primary sky guard
-    // is touchesTop() (sky always reaches the top border); the size cap only
-    // rejects the pathological case of filling almost the entire frame.
-    const TOPCAP = 0.85;
-
-    let use = primary;
-    let accepted = primary.count > 120 && pFrac <= TOPCAP && !pTop;
-
-    // ---- LEVEL 2: conservative edge-aware fallback ----
-    if (!accepted) {
-      const fb = growRegion(data, w, h, px, py, { stopFactor: 0.4, seedTol: 46, lumTol: 46, adaptiveRadius: 5 });
-      const fFrac = fb.count / n;
-      const fTop = touchesTop(fb.mask, w, h);
-      if (fb.count >= 120 && fFrac <= TOPCAP && !fTop) { use = fb; accepted = true; }
+    // If the grow reached the top border it may have caught the sky band. Instead
+    // of shrinking to a tiny patch, trim the sky off the top of the mask and keep
+    // the entire wall below it, unpainted.
+    if (accepted && touchesTop(use.mask, w, h)) {
+      const trimmed = removeSkyComponent(use.mask, w, h);
+      use = { mask: trimmedMask, count: trimmed };
+      accepted = trimmed >= 120;
     }
 
-    // ---- LEVEL 3: last-resort tiny safe region (never sky - stays local) ----
-    if (!accepted) {
-      const mini = growRegion(data, w, h, px, py, { stopFactor: 0.18, seedTol: 34, lumTol: 34, adaptiveRadius: 6 });
-      const mFrac = mini.count / n;
-      if (mini.count >= 60 && mFrac <= TOPCAP) { use = mini; accepted = true; }
+    // Unusually small region: retry with looser surface tolerance so the full wall
+    // is captured (never dump a tiny partial patch).
+    if (accepted && use.count < 120) {
+      const retry = growRegion(data, w, h, px, py, { chromaTol: 0.17, lumTol: 240 });
+      use = retry;
+      accepted = retry.count >= 120;
     }
 
     if (!accepted || use.count < 60) {
-      toast(use.count > 10 && (use.count / n) > TOPCAP
-        ? 'Region too large — it caught the sky/background. Click closer to the wall or use Select/Brush.'
-        : 'Could not detect a clean wall here — try the Brush tool or click the middle of a wall.');
+      toast('Could not detect a clean wall here — click the middle of a wall or use the Brush/Select tool.');
       if (debugMode && use.count) dumpDebug(i0, use.mask, w, h, true);
       return;
     }
@@ -620,6 +681,34 @@
     addRegion(use.mask, state.shade);
     renderCanvas();
     if (debugMode) dumpDebug(i0, use.mask, w, h, false);
+  }
+
+  // Remove the sky component: the sky always touches the top border, so clear the
+  // top-connected region of the mask and keep the wall below it.
+  let trimmedMask = null;
+  function removeSkyComponent(mask, w, h) {
+    const n = w * h;
+    const res = new Uint8Array(mask);
+    const visited = new Uint8Array(n);
+    const stack = new Int32Array(n);
+    let sp = 0;
+    for (let x = 0; x < w; x++) {
+      const i = x;
+      if (mask[i] && !visited[i]) { visited[i] = 1; stack[sp++] = i; }
+    }
+    while (sp) {
+      const i = stack[--sp];
+      const x = i % w;
+      res[i] = 0;
+      if (x > 0 && mask[i - 1] && !visited[i - 1]) { visited[i - 1] = 1; stack[sp++] = i - 1; }
+      if (x < w - 1 && mask[i + 1] && !visited[i + 1]) { visited[i + 1] = 1; stack[sp++] = i + 1; }
+      if (i >= w && mask[i - w] && !visited[i - w]) { visited[i - w] = 1; stack[sp++] = i - w; }
+      if (i < (h - 1) * w && mask[i + w] && !visited[i + w]) { visited[i + w] = 1; stack[sp++] = i + w; }
+    }
+    let c = 0;
+    for (let i = 0; i < n; i++) if (res[i]) c++;
+    trimmedMask = res;
+    return c;
   }
 
   // True if the mask reaches the image's top border over a notably wide run.
