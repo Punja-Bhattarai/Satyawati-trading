@@ -55,6 +55,10 @@
 
   const FAMILIES = [...new Set(SHADES.map((s) => s.f))].sort();
 
+  // Development debug mode: /paint-visualizer?d=1 (or ?debug=1) draws the
+  // detected region/edges on the overlay canvas after each Smart Paint.
+  const debugMode = /[?&](d|debug)=1/i.test(window.location.search);
+
   /* ============================================================
      STATE
   ============================================================ */
@@ -232,54 +236,282 @@
     return grad;
   }
 
-  function growRegion(data, w, h, sx, sy) {
-    const mask = new Uint8Array(w * h);
-    const visited = new Uint8Array(w * h);
+  /* ============================================================
+     SEGMENTATION — edge-aware, non leak-prone Smart Paint
+     Grows a connected region from the click, gated by:
+       • seed-relative color bound  (cannot drift onto another surface)
+       • running local mean        (follows gradients/shadows on a wall)
+       • gradient barrier          (roof/window/door edges STOP the grow
+                                    even when the color is similar)
+       • luminance bound
+     Then: sky/context guard, confidence safety cap, mask cleanup,
+     and a conservative bounded fallback.
+  ============================================================ */
+
+  // cached work buffers (allocated once per image)
+  let segVisited = null;   // Uint8Array
+  let segStack = null;     // Int32Array (capacity = w*h)
+
+  function allocSeg(w, h) {
+    const n = w * h;
+    segVisited = new Uint8Array(n);
+    segStack = new Int32Array(n);
+  }
+
+  // Adaptive tolerance from the seed's local texture.
+  function seedTolerance(data, w, h, sx, sy, radius) {
+    let sum = 0, cnt = 0;
+    for (let dy = -radius; dy <= radius; dy++) {
+      for (let dx = -radius; dx <= radius; dx++) {
+        const x = sx + dx, y = sy + dy;
+        if (x < 0 || y < 0 || x >= w || y >= h) continue;
+        const o = (y * w + x) * 4;
+        sum += 0.299 * data[o] + 0.587 * data[o + 1] + 0.114 * data[o + 2];
+        cnt++;
+      }
+    }
+    if (!cnt) return 40;
+    const ml = sum / cnt;
+    let varSum = 0;
+    for (let dy = -radius; dy <= radius; dy++) {
+      for (let dx = -radius; dx <= radius; dx++) {
+        const x = sx + dx, y = sy + dy;
+        if (x < 0 || y < 0 || x >= w || y >= h) continue;
+        const o = (y * w + x) * 4;
+        const l = 0.299 * data[o] + 0.587 * data[o + 1] + 0.114 * data[o + 2];
+        const d = l - ml;
+        varSum += d * d;
+      }
+    }
+    const sd = Math.sqrt(varSum / cnt);
+    return 26 + Math.min(30, sd * 1.1);
+  }
+
+  // Edge-aware connected region grow from (sx, sy).
+  function growRegion(data, w, h, sx, sy, opts) {
+    const o = opts || {};
+    const grad = state.grad;
+    const sf = (o.stopFactor !== undefined) ? o.stopFactor : 1;   // < 1 => more conservative
+    const tol = seedTolerance(data, w, h, sx, sy, o.adaptiveRadius || 4) * (0.7 + 0.3 * sf);
+    const T_SEED = (o.seedTol || 64) * sf;    // hard bound vs seed (no unlimited drift)
+    const T_LUM = (o.lumTol || 70) * sf;      // luminance drift bound
+    const E_HARD = o.edgeHard || 66;          // >= this => near-stop barrier
+    const E_MED = o.edgeMed || 30;            // >= this => tighten tolerance
+
+    const n = w * h;
+    const mask = new Uint8Array(n);
+    if (sx < 0 || sy < 0 || sx >= w || sy >= h) return { mask, count: 0 };
+
     const i0 = sy * w + sx;
     const o0 = i0 * 4;
     const sr = data[o0], sg = data[o0 + 1], sb = data[o0 + 2];
-    const grad = state.grad;
-    const stack = [i0];
-    visited[i0] = 1;
-    let count = 0;
-    let rSum = 0, gSum = 0, bSum = 0;
+    const sl = 0.299 * sr + 0.587 * sg + 0.114 * sb;
 
-    while (stack.length) {
-      const i = stack.pop();
-      const o = i * 4;
-      const r = data[o], g = data[o + 1], b = data[o + 2];
+    // reuse buffers
+    if (!segVisited || segVisited.length !== n) allocSeg(w, h);
+    segVisited.fill(0);
 
-      let ok = false;
-      if (count === 0) {
-        ok = true;
-      } else {
-        const ar = rSum / count, ag = gSum / count, ab = bSum / count;
-        const dAvg = Math.max(Math.abs(r - ar), Math.abs(g - ag), Math.abs(b - ab));
-        if (dAvg <= 38) ok = true;
-        else {
-          const dSeed = Math.max(Math.abs(r - sr), Math.abs(g - sg), Math.abs(b - sb));
-          if (dSeed <= 55) ok = true;
-        }
-        if (grad && grad[i] > 30) {
-          const dSeed = Math.max(Math.abs(r - sr), Math.abs(g - sg), Math.abs(b - sb));
-          if (dSeed > 28) ok = false;
-        }
+    let meanR = sr, meanG = sg, meanB = sb, meanL = sl;
+    let stackLen = 0;
+    segStack[stackLen++] = i0;
+    segVisited[i0] = 1;
+    mask[i0] = 255;
+    let count = 1;
+
+    while (stackLen) {
+      const i = segStack[--stackLen];
+      const oi = i * 4;
+      const r = data[oi], g = data[oi + 1], b = data[oi + 2];
+      const lum = 0.299 * r + 0.587 * g + 0.114 * b;
+
+      const dR = r - sr, dG = g - sg, dB = b - sb;
+      const dSeed = Math.max(Math.abs(dR), Math.abs(dG), Math.abs(dB));
+      const dMean = Math.max(Math.abs(r - meanR), Math.abs(g - meanG), Math.abs(b - meanB));
+      const dLum = Math.abs(lum - meanL);
+
+      const gb = grad ? grad[i] : 0;
+
+      // Gradient barrier: strong edges raise the color bar sharply, so a
+      // wall/sky or wall/window boundary stops even if colors are similar.
+      let tolEff = tol;
+      if (gb >= E_HARD) {
+        tolEff = 6;                             // essentially: same color only
+      } else if (gb >= E_MED) {
+        tolEff = 6 + Math.round((E_HARD - gb) * 0.6);  // tighten as edge strengthens
       }
-      if (!ok) continue;
 
-      mask[i] = 255;
-      count++;
-      rSum += r; gSum += g; bSum += b;
+      const okSeed = dSeed <= T_SEED;
+      const okMean = dMean <= tolEff;
+      const okLum = dLum <= T_LUM;
 
-      const x = i % w;
-      if (x > 0 && !visited[i - 1]) { visited[i - 1] = 1; stack.push(i - 1); }
-      if (x < w - 1 && !visited[i + 1]) { visited[i + 1] = 1; stack.push(i + 1); }
-      if (i >= w && !visited[i - w]) { visited[i - w] = 1; stack.push(i - w); }
-      if (i < (h - 1) * w && !visited[i + w]) { visited[i + w] = 1; stack.push(i + w); }
+      if (okSeed && okMean && okLum) {
+        mask[i] = 255;
+        count++;
+        // update running local mean (mild inertia to follow gradients)
+        const a = 0.96;
+        meanR = meanR * a + r * (1 - a);
+        meanG = meanG * a + g * (1 - a);
+        meanB = meanB * a + b * (1 - a);
+        meanL = meanL * a + lum * (1 - a);
+
+        const x = i % w;
+        if (x > 0 && !segVisited[i - 1]) { segVisited[i - 1] = 1; segStack[stackLen++] = i - 1; }
+        if (x < w - 1 && !segVisited[i + 1]) { segVisited[i + 1] = 1; segStack[stackLen++] = i + 1; }
+        if (i >= w && !segVisited[i - w]) { segVisited[i - w] = 1; segStack[stackLen++] = i - w; }
+        if (i < (h - 1) * w && !segVisited[i + w]) { segVisited[i + w] = 1; segStack[stackLen++] = i + w; }
+      }
     }
 
-    fillGaps(mask, w, h);
-    return { mask, count };
+    // ---- connected-region / mask cleanup ----
+    let cleaned = mask;
+    if (count > 0) {
+      const lb = count / n;
+      if (lb > 0.02) cleaned = cleanMask(mask, w, h, i0);
+    }
+    return { mask: cleaned, count };
+  }
+
+  // Clean the grown mask: fill enclosed interior holes (so windows/objects a
+  // wall encloses stay un-painted) and keep only the component touching the seed.
+  function cleanMask(mask, w, h, seedIdx) {
+    const n = w * h;
+    const filled = holeFill(mask, w, h, n);
+    const out = new Uint8Array(n);
+    const stack = new Int32Array(n);
+    let sp = 0;
+    out[seedIdx] = 255;
+    stack[sp++] = seedIdx;
+    while (sp) {
+      const i = stack[--sp];
+      const x = i % w;
+      const y = (i / w) | 0;
+      const tryPush = (j) => { if (filled.mask[j] && !out[j]) { out[j] = 255; stack[sp++] = j; } };
+      if (x > 0 && filled.mask[i - 1]) tryPush(i - 1);
+      if (x < w - 1 && filled.mask[i + 1]) tryPush(i + 1);
+      if (y > 0 && filled.mask[i - w]) tryPush(i - w);
+      if (y < h - 1 && filled.mask[i + w]) tryPush(i + w);
+    }
+    return out;
+  }
+
+  // Fill interior holes: flood background from the borders; every pixel not
+  // reached by that flood and not in the mask is an enclosed hole -> fill it.
+  function holeFill(mask, w, h, n) {
+    const bg = new Uint8Array(n);
+    const stack = new Int32Array(n);
+    let sp = 0;
+    const push = (i) => { if (!bg[i] && !mask[i]) { bg[i] = 1; stack[sp++] = i; } };
+    for (let x = 0; x < w; x++) { push(x); push((h - 1) * w + x); }
+    for (let y = 0; y < h; y++) { push(y * w); push(y * w + (w - 1)); }
+    while (sp) {
+      const i = stack[--sp];
+      const x = i % w, y = (i / w) | 0;
+      if (x > 0) push(i - 1);
+      if (x < w - 1) push(i + 1);
+      if (y > 0) push(i - w);
+      if (y < h - 1) push(i + w);
+    }
+    const out = new Uint8Array(n);
+    for (let i = 0; i < n; i++) if (mask[i] || !bg[i]) out[i] = 255;
+    return { mask: out };
+  }
+
+  /* ============================================================
+     SMART PAINT — dispatch + safety + fallback
+  ============================================================ */
+
+  function smartPaint(x, y) {
+    if (!state.shade) {
+      toast('Pick a shade first.');
+      return;
+    }
+    const w = state.width, h = state.height;
+    const data = state.image.data;
+    const n = w * h;
+    const px = Math.max(0, Math.min(w - 1, Math.round(x)));
+    const py = Math.max(0, Math.min(h - 1, Math.round(y)));
+    const i0 = py * w + px;
+
+    // ---- LEVEL 1: attempt full edge-aware grow ----
+    const primary = growRegion(data, w, h, px, py);
+    const pFrac = primary.count / n;
+    const pTop = touchesTop(primary.mask, w, h);
+
+    // ---- SAFETY CAP (Phase 18 / 17) ----
+    // A wall should almost never be > ~40% of the frame; sky is the #1 leak.
+    // If the region touches the sky band at the top over a wide run, it almost
+    // certainly caught the sky — so we drop down to a bounded fallback instead.
+    const TOPCAP = 0.42;
+
+    let use = primary;
+    let accepted = primary.count > 120 && pFrac <= TOPCAP && !pTop;
+
+    // ---- LEVEL 2: conservative edge-aware fallback ----
+    if (!accepted) {
+      const fb = growRegion(data, w, h, px, py, { stopFactor: 0.4, seedTol: 46, lumTol: 46, adaptiveRadius: 5 });
+      const fFrac = fb.count / n;
+      const fTop = touchesTop(fb.mask, w, h);
+      if (fb.count >= 120 && fFrac <= TOPCAP && !fTop) { use = fb; accepted = true; }
+    }
+
+    // ---- LEVEL 3: last-resort tiny safe region (never sky - stays local) ----
+    if (!accepted) {
+      const mini = growRegion(data, w, h, px, py, { stopFactor: 0.18, seedTol: 34, lumTol: 34, adaptiveRadius: 6 });
+      const mFrac = mini.count / n;
+      if (mini.count >= 60 && mFrac <= TOPCAP) { use = mini; accepted = true; }
+    }
+
+    if (!accepted || use.count < 60) {
+      toast(use.count > 10 && (use.count / n) > TOPCAP
+        ? 'Region too large — it caught the sky/background. Click closer to the wall or use Select/Brush.'
+        : 'Could not detect a clean wall here — try the Brush tool or click the middle of a wall.');
+      if (debugMode && use.count) dumpDebug(i0, use.mask, w, h, true);
+      return;
+    }
+
+    pushUndo();
+    addRegion(use.mask, state.shade);
+    renderCanvas();
+    if (debugMode) dumpDebug(i0, use.mask, w, h, false);
+  }
+
+  // True if the mask reaches the image's top border over a notably wide run.
+  function touchesTop(mask, w, h) {
+    let run = 0, maxRun = 0;
+    for (let x = 0; x < w; x++) {
+      run = mask[x] ? run + 1 : 0;
+      if (run > maxRun) maxRun = run;
+    }
+    return maxRun > w * 0.15;
+  }
+
+  // Debug visualization on the overlay canvas (enabled with ?d=1).
+  function dumpDebug(seedIdx, mask, w, h, rejected) {
+    if (!lctx) return;
+    lctx.clearRect(0, 0, w, h);
+    // faint outline of the detected mask
+    lctx.save();
+    lctx.strokeStyle = rejected ? 'rgba(255,60,0,0.9)' : 'rgba(0,230,120,0.9)';
+    lctx.lineWidth = 1;
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        const i = y * w + x;
+        if (!mask[i]) continue;
+        const on = x === 0 || y === 0 || x === w - 1 || y === h - 1
+          ? false
+          : !(mask[i - 1] && mask[i + 1] && mask[i - w] && mask[i + w]);
+        if (on) {
+          if (x % 2 === 0 && y % 2 === 0) lctx.fillRect(x, y, 1, 1);
+        }
+      }
+    }
+    // seed marker
+    const sx = seedIdx % w, sy = (seedIdx / w) | 0;
+    lctx.fillStyle = '#ff0044';
+    lctx.beginPath();
+    lctx.arc(sx, sy, 3, 0, Math.PI * 2);
+    lctx.fill();
+    lctx.restore();
   }
 
   function fillGaps(mask, w, h, maxGap) {
@@ -299,21 +531,6 @@
         x = gapEnd;
       }
     }
-  }
-
-  function smartPaint(x, y) {
-    if (!state.shade) {
-      toast('Pick a shade first.');
-      return;
-    }
-    const { mask, count } = growRegion(state.image.data, state.width, state.height, x, y);
-    if (count < 60) {
-      toast('Could not detect a wall here — try the Brush tool.');
-      return;
-    }
-    pushUndo();
-    addRegion(mask, state.shade);
-    renderCanvas();
   }
 
   function addRegion(mask, shade) {
